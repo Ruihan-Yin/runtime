@@ -1974,7 +1974,7 @@ namespace System
             }
             else if (Vector512.IsHardwareAccelerated && length >= Vector512<TValue>.Count)
             {
-                Vector512<TValue> equals, current, values0 = Vector512.Create(value0), values1 = Vector512.Create(value1), values2 = Vector512.Create(value2);
+                Vector512<TValue> current, values0 = Vector512.Create(value0), values1 = Vector512.Create(value1), values2 = Vector512.Create(value2);
                 ref TValue currentSearchSpace = ref searchSpace;
                 ref TValue oneVectorAwayFromEnd = ref Unsafe.Add(ref searchSpace, length - Vector512<TValue>.Count);
 
@@ -1982,14 +1982,13 @@ namespace System
                 do
                 {
                     current = Vector512.LoadUnsafe(ref currentSearchSpace);
-                    equals = TNegator.NegateIfNeeded(Vector512.Equals(values0, current) | Vector512.Equals(values1, current) | Vector512.Equals(values2, current));
-                    if (equals == Vector512<TValue>.Zero)
+                    if (TNegator.HasMatch(current, values0, values1, values2))
                     {
-                        currentSearchSpace = ref Unsafe.Add(ref currentSearchSpace, Vector512<TValue>.Count);
-                        continue;
+                        return ComputeFirstIndex(ref searchSpace, ref currentSearchSpace, TNegator.GetMatchMask(current, values0, values1, values2));
                     }
 
-                    return ComputeFirstIndex(ref searchSpace, ref currentSearchSpace, equals);
+                    currentSearchSpace = ref Unsafe.Add(ref currentSearchSpace, Vector512<TValue>.Count);
+
                 }
                 while (!Unsafe.IsAddressGreaterThan(ref currentSearchSpace, ref oneVectorAwayFromEnd));
 
@@ -1997,10 +1996,9 @@ namespace System
                 if ((uint)length % Vector512<TValue>.Count != 0)
                 {
                     current = Vector512.LoadUnsafe(ref oneVectorAwayFromEnd);
-                    equals = TNegator.NegateIfNeeded(Vector512.Equals(values0, current) | Vector512.Equals(values1, current) | Vector512.Equals(values2, current));
-                    if (equals != Vector512<TValue>.Zero)
+                    if (TNegator.HasMatch(current, values0, values1, values2))
                     {
-                        return ComputeFirstIndex(ref searchSpace, ref oneVectorAwayFromEnd, equals);
+                        return ComputeFirstIndex(ref searchSpace, ref oneVectorAwayFromEnd, TNegator.GetMatchMask(current, values0, values1, values2));
                     }
                 }
             }
@@ -3407,6 +3405,9 @@ namespace System
 
             static abstract bool HasMatch(Vector512<T> left, Vector512<T> right);
             static abstract Vector512<T> GetMatchMask(Vector512<T> left, Vector512<T> right);
+
+            static abstract bool HasMatch(Vector512<T> left, Vector512<T> right0, Vector512<T> right1, Vector512<T> right2);
+            static abstract Vector512<T> GetMatchMask(Vector512<T> left, Vector512<T> right0, Vector512<T> right1, Vector512<T> right2);
         }
 
         internal readonly struct DontNegate<T> : INegator<T> where T : struct
@@ -3421,6 +3422,9 @@ namespace System
 
             public static bool HasMatch(Vector512<T> left, Vector512<T> right) => Vector512.EqualsAny(left, right);
             public static Vector512<T> GetMatchMask(Vector512<T> left, Vector512<T> right) => Vector512.Equals(left, right);
+
+            public static bool HasMatch(Vector512<T> left, Vector512<T> right0, Vector512<T> right1, Vector512<T> right2) => Vector512.EqualsAny(left, right0) | Vector512.EqualsAny(left, right1) | Vector512.EqualsAny(left, right2);
+            public static Vector512<T> GetMatchMask(Vector512<T> left, Vector512<T> right0, Vector512<T> right1, Vector512<T> right2) => Vector512.Equals(left, right0) | Vector512.Equals(left, right1) | Vector512.Equals(left, right2);
         }
 
         internal readonly struct Negate<T> : INegator<T> where T : struct
@@ -3435,6 +3439,9 @@ namespace System
 
             public static bool HasMatch(Vector512<T> left, Vector512<T> right) => !Vector512.EqualsAll(left, right);
             public static Vector512<T> GetMatchMask(Vector512<T> left, Vector512<T> right) => ~Vector512.Equals(left, right);
+
+            public static bool HasMatch(Vector512<T> left, Vector512<T> right0, Vector512<T> right1, Vector512<T> right2) => Vector512.BitwiseAnd(Vector512.Xor(left, right0), Vector512.BitwiseAnd(Vector512.Xor(left, right1), Vector512.Xor(left, right2))) != Vector512<T>.Zero;
+            public static Vector512<T> GetMatchMask(Vector512<T> left, Vector512<T> right0, Vector512<T> right1, Vector512<T> right2) => ~Vector512.Equals(Vector512.BitwiseAnd(Vector512.Xor(left, right0), Vector512.BitwiseAnd(Vector512.Xor(left, right1), Vector512.Xor(left, right2))), Vector512<T>.Zero);
         }
 
         internal static int IndexOfAnyInRange<T>(ref T searchSpace, T lowInclusive, T highInclusive, int length)

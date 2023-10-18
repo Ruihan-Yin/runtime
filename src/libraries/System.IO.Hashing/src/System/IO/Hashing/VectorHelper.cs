@@ -29,6 +29,14 @@ namespace System.IO.Hashing
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Vector512<ulong> FoldPolynomialPair(Vector512<ulong> target, Vector512<ulong> source, Vector512<ulong> constants)
+        {
+            target ^= CarrylessMultiplyUpper(source, constants);
+            target ^= CarrylessMultiplyLower(source, constants);
+
+            return target;
+        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Vector128<ulong> CarrylessMultiplyLower(Vector128<ulong> left, Vector128<ulong> right)
         {
             if (Pclmulqdq.IsSupported)
@@ -42,6 +50,18 @@ namespace System.IO.Hashing
             }
 
             ThrowHelper.ThrowUnreachableException();
+            return default;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Vector512<ulong> CarrylessMultiplyLower(Vector512<ulong> left, Vector512<ulong> right)
+        {
+            if (Avx512F.IsSupported)
+            {
+                return Avx512F.CarrylessMultiply(left, right, 0x00);
+            }
+
+            // ThrowHelper.ThrowUnreachableException();
             return default;
         }
 
@@ -63,6 +83,18 @@ namespace System.IO.Hashing
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Vector512<ulong> CarrylessMultiplyUpper(Vector512<ulong> left, Vector512<ulong> right)
+        {
+            if (Avx512F.IsSupported)
+            {
+                return Avx512F.CarrylessMultiply(left, right, 0x11);
+            }
+
+            // ThrowHelper.ThrowUnreachableException();
+            return default;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Vector128<ulong> CarrylessMultiplyLeftUpperRightLower(Vector128<ulong> left, Vector128<ulong> right)
         {
             if (Pclmulqdq.IsSupported)
@@ -80,6 +112,18 @@ namespace System.IO.Hashing
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Vector512<ulong> CarrylessMultiplyLeftUpperRightLower(Vector512<ulong> left, Vector512<ulong> right)
+        {
+            if (Avx512F.IsSupported)
+            {
+                return Avx512F.CarrylessMultiply(left, right, 0x01);
+            }
+
+            // ThrowHelper.ThrowUnreachableException();
+            return default;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Vector128<ulong> CarrylessMultiplyLeftLowerRightUpper(Vector128<ulong> left, Vector128<ulong> right)
         {
             if (Pclmulqdq.IsSupported)
@@ -93,6 +137,18 @@ namespace System.IO.Hashing
             }
 
             ThrowHelper.ThrowUnreachableException();
+            return default;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Vector512<ulong> CarrylessMultiplyLeftLowerRightUpper(Vector512<ulong> left, Vector512<ulong> right)
+        {
+            if (Avx512F.IsSupported)
+            {
+                return Avx512F.CarrylessMultiply(left, right, 0x10);
+            }
+
+            // ThrowHelper.ThrowUnreachableException();
             return default;
         }
 

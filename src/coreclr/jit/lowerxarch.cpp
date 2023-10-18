@@ -7717,6 +7717,7 @@ bool Lowering::IsContainableHWIntrinsicOp(GenTreeHWIntrinsic* parentNode, GenTre
                 case NI_SSE41_MultipleSumAbsoluteDifferences:
                 case NI_AES_KeygenAssist:
                 case NI_PCLMULQDQ_CarrylessMultiply:
+                case NI_AVX512F_CarrylessMultiply:
                 case NI_AVX_Blend:
                 case NI_AVX_Compare:
                 case NI_AVX_DotProduct:
@@ -9451,6 +9452,7 @@ void Lowering::ContainCheckHWIntrinsic(GenTreeHWIntrinsic* node)
                         case NI_AVX512DQ_VL_Range:
                         case NI_AVX512DQ_ReduceScalar:
                         case NI_PCLMULQDQ_CarrylessMultiply:
+                        case NI_AVX512F_CarrylessMultiply:
                         {
                             if (!isContainedImm)
                             {

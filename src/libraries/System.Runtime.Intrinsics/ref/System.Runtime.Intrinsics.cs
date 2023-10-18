@@ -4954,6 +4954,7 @@ namespace System.Runtime.Intrinsics.X86
     {
         internal Avx512F() { }
         public static new bool IsSupported { get { throw null; } }
+        public static System.Runtime.Intrinsics.Vector512<ulong> CarrylessMultiply(System.Runtime.Intrinsics.Vector512<ulong> left, System.Runtime.Intrinsics.Vector512<ulong> right, [System.Diagnostics.CodeAnalysis.ConstantExpectedAttribute] byte control) { throw null; }
         public static System.Runtime.Intrinsics.Vector512<uint> Abs(System.Runtime.Intrinsics.Vector512<int> value) { throw null; }
         public static System.Runtime.Intrinsics.Vector512<ulong> Abs(System.Runtime.Intrinsics.Vector512<long> value) { throw null; }
         public static System.Runtime.Intrinsics.Vector512<double> Add(System.Runtime.Intrinsics.Vector512<double> left, System.Runtime.Intrinsics.Vector512<double> right) { throw null; }

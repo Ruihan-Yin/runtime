@@ -3733,5 +3733,9 @@ namespace System.Runtime.Intrinsics.X86
         ///   VPXORQ zmm1 {k1}{z}, zmm2, zmm3/m512/m64bcst
         /// </summary>
         public static Vector512<ulong> Xor(Vector512<ulong> left, Vector512<ulong> right) => Xor(left, right);
+        /// <summary>
+        ///   VPCLMULQDQ zmm1, zmm2, zmm3/m512, imm8
+        /// </summary>
+        public static Vector512<ulong> CarrylessMultiply(Vector512<ulong> left, Vector512<ulong> right, [ConstantExpected] byte control) => CarrylessMultiply(left, right, control);
     }
 }

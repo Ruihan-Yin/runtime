@@ -2957,5 +2957,16 @@ namespace System.Runtime.Intrinsics
         {
             Unsafe.AsRef(in vector._upper) = value;
         }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        [CompExactlyDependsOn(typeof(Avx2))]
+        internal static Vector256<ushort> AddSaturate(Vector256<ushort> left, Vector256<ushort> right)
+        {
+            if (!Avx2.IsSupported)
+            {
+                ThrowHelper.ThrowNotSupportedException();
+            }
+            return Avx2.AddSaturate(left, right);
+        }
     }
 }

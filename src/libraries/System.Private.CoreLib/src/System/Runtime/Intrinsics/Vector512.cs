@@ -2977,5 +2977,16 @@ namespace System.Runtime.Intrinsics
         {
             Unsafe.AsRef(in vector._upper) = value;
         }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        [CompExactlyDependsOn(typeof(Avx512BW))]
+        internal static Vector512<ushort> AddSaturate(Vector512<ushort> left, Vector512<ushort> right)
+        {
+            if (!Avx512BW.IsSupported)
+            {
+                ThrowHelper.ThrowNotSupportedException();
+            }
+            return Avx512BW.AddSaturate(left, right);
+        }
     }
 }

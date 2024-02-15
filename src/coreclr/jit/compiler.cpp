@@ -6225,6 +6225,21 @@ int Compiler::compCompile(CORINFO_MODULE_HANDLE classPtr,
         {
             instructionSetFlags.AddInstructionSet(InstructionSet_AVX512VBMI_VL);
         }
+
+        if (JitConfig.EnableAVX10v1() != 0)
+        {
+            instructionSetFlags.AddInstructionSet(InstructionSet_AVX10v1);
+        }
+
+        if (JitConfig.EnableAVX10v1_256() != 0)
+        {
+            instructionSetFlags.AddInstructionSet(InstructionSet_AVX10v1_256);
+        }
+
+        if (JitConfig.EnableAVX10v1_512() != 0)
+        {
+            instructionSetFlags.AddInstructionSet(InstructionSet_AVX10v1_512);
+        }
 #endif
 
         // These calls are important and explicitly ordered to ensure that the flags are correct in

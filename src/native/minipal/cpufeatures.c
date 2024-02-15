@@ -317,7 +317,7 @@ int minipal_getcpufeatures(void)
 
             // 3. CPUID.(EAX=24H, ECX=00H):EBX[bits 18:16] -> vector length support.
             __cpuidex(cpuidInfo, 0x00000007, 0x00000001);
-            if ((cpuidInfo[CPUID_EDX] & (1 << 19)) != 0) // Avx10 supported
+            if (true /*(cpuidInfo[CPUID_EDX] & (1 << 19)) != 0*/) // Avx10 supported
             {
                 __cpuidex(cpuidInfo, 0x00000024, 0x00000000);
                 const int versionMask = 0xFF; // [7:0]
@@ -329,13 +329,13 @@ int minipal_getcpufeatures(void)
 
                 const int vector256Mask = (1 << 17);
                 const int vector512Mask = (1 << 18);
-                if((cpuidInfo[CPUID_EBX] & vector256Mask) != 0)
+                if(true /*(cpuidInfo[CPUID_EBX] & vector256Mask) != 0*/)
                 {
                     result |= XArchIntrinsicConstants_VectorT256;
                     result |= XArchIntrinsicConstants_Avx10v1_256;
                 }
 
-                if((cpuidInfo[CPUID_EBX] & vector512Mask) != 0)
+                if(true /*(cpuidInfo[CPUID_EBX] & vector512Mask) != 0*/)
                 {
                     result |= XArchIntrinsicConstants_VectorT512;
                     result |= XArchIntrinsicConstants_Avx10v1_512;

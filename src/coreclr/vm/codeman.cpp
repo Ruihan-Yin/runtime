@@ -1255,7 +1255,7 @@ void EEJitManager::SetCpuInfo()
 
     CORJIT_FLAGS CPUCompileFlags;
 
-    int cpuFeatures = minipal_getcpufeatures();
+    long long cpuFeatures = minipal_getcpufeatures();
 
 #if defined(TARGET_X86) || defined(TARGET_AMD64)
 
@@ -1453,6 +1453,12 @@ void EEJitManager::SetCpuInfo()
     if (((cpuFeatures & XArchIntrinsicConstants_Avx10v1_V512) != 0))
     {
         CPUCompileFlags.Set(InstructionSet_AVX10v1_V512);
+    }
+
+    if (((cpuFeatures & ((long long)XArchIntrinsicConstants_Apx << 32)) != 0))
+    {
+        printf("Ruihan: Setting APX\n");
+        CPUCompileFlags.Set(InstructionSet_APX);
     }
 #elif defined(TARGET_ARM64)
 

@@ -34,7 +34,7 @@ namespace ILCompiler
             return false;
         }
 
-        public static void AddRuntimeRequiredIsaFlagsToBuilder(InstructionSetSupportBuilder builder, int flags)
+        public static void AddRuntimeRequiredIsaFlagsToBuilder(InstructionSetSupportBuilder builder, long flags)
         {
             switch (builder.Architecture)
             {
@@ -55,40 +55,41 @@ namespace ILCompiler
         private static class XArchIntrinsicConstants
         {
             // SSE and SSE2 are baseline ISAs - they're always available
-            public const int Aes = 0x0001;
-            public const int Pclmulqdq = 0x0002;
-            public const int Sse3 = 0x0004;
-            public const int Ssse3 = 0x0008;
-            public const int Sse41 = 0x0010;
-            public const int Sse42 = 0x0020;
-            public const int Popcnt = 0x0040;
-            public const int Avx = 0x0080;
-            public const int Fma = 0x0100;
-            public const int Avx2 = 0x0200;
-            public const int Bmi1 = 0x0400;
-            public const int Bmi2 = 0x0800;
-            public const int Lzcnt = 0x1000;
-            public const int AvxVnni = 0x2000;
-            public const int Movbe = 0x4000;
-            public const int Avx512f = 0x8000;
-            public const int Avx512f_vl = 0x10000;
-            public const int Avx512bw = 0x20000;
-            public const int Avx512bw_vl = 0x40000;
-            public const int Avx512cd = 0x80000;
-            public const int Avx512cd_vl = 0x100000;
-            public const int Avx512dq = 0x200000;
-            public const int Avx512dq_vl = 0x400000;
-            public const int Avx512Vbmi = 0x800000;
-            public const int Avx512Vbmi_vl = 0x1000000;
-            public const int Serialize = 0x2000000;
-            public const int VectorT128 = 0x4000000;
-            public const int VectorT256 = 0x8000000;
-            public const int VectorT512 = 0x10000000;
-            public const int Avx10v1 = 0x20000000;
-            public const int Avx10v1_v256 = 0x40000000;
-            public const int Avx10v1_v512 = unchecked((int)0x80000000);
+            public const long Aes = 0x0001L;
+            public const long Pclmulqdq = 0x0002L;
+            public const long Sse3 = 0x0004L;
+            public const long Ssse3 = 0x0008L;
+            public const long Sse41 = 0x0010L;
+            public const long Sse42 = 0x0020L;
+            public const long Popcnt = 0x0040L;
+            public const long Avx = 0x0080L;
+            public const long Fma = 0x0100L;
+            public const long Avx2 = 0x0200L;
+            public const long Bmi1 = 0x0400L;
+            public const long Bmi2 = 0x0800L;
+            public const long Lzcnt = 0x1000L;
+            public const long AvxVnni = 0x2000L;
+            public const long Movbe = 0x4000L;
+            public const long Avx512f = 0x8000L;
+            public const long Avx512f_vl = 0x10000L;
+            public const long Avx512bw = 0x20000L;
+            public const long Avx512bw_vl = 0x40000L;
+            public const long Avx512cd = 0x80000L;
+            public const long Avx512cd_vl = 0x100000L;
+            public const long Avx512dq = 0x200000L;
+            public const long Avx512dq_vl = 0x400000L;
+            public const long Avx512Vbmi = 0x800000L;
+            public const long Avx512Vbmi_vl = 0x1000000L;
+            public const long Serialize = 0x2000000L;
+            public const long VectorT128 = 0x4000000L;
+            public const long VectorT256 = 0x8000000L;
+            public const long VectorT512 = 0x10000000L;
+            public const long Avx10v1 = 0x20000000L;
+            public const long Avx10v1_v256 = 0x40000000L;
+            public const long Avx10v1_v512 = 0x80000000L;
+            public const long Apx = 0x100000000L;
 
-            public static void AddToBuilder(InstructionSetSupportBuilder builder, int flags)
+            public static void AddToBuilder(InstructionSetSupportBuilder builder, long flags)
             {
                 if ((flags & Aes) != 0)
                     builder.AddSupportedInstructionSet("aes");
@@ -148,9 +149,11 @@ namespace ILCompiler
                     builder.AddSupportedInstructionSet("avx10v1_v256");
                 if ((flags & Avx10v1_v512) != 0)
                     builder.AddSupportedInstructionSet("avx10v1_v512");
+                if ((flags & Apx) != 0)
+                    builder.AddSupportedInstructionSet("apx");
             }
 
-            public static int FromInstructionSet(InstructionSet instructionSet)
+            public static long FromInstructionSet(InstructionSet instructionSet)
             {
                 Debug.Assert(InstructionSet.X64_AES == InstructionSet.X86_AES);
                 Debug.Assert(InstructionSet.X64_SSE41 == InstructionSet.X86_SSE41);
@@ -240,20 +243,20 @@ namespace ILCompiler
         // Keep these enumerations in sync with cpufeatures.h in the minipal.
         private static class Arm64IntrinsicConstants
         {
-            public const int AdvSimd = 0x0001;
-            public const int Aes = 0x0002;
-            public const int Crc32 = 0x0004;
-            public const int Dp = 0x0008;
-            public const int Rdm = 0x0010;
-            public const int Sha1 = 0x0020;
-            public const int Sha256 = 0x0040;
-            public const int Atomics = 0x0080;
-            public const int Rcpc = 0x0100;
-            public const int VectorT128 = 0x0200;
-            public const int Rcpc2 = 0x0400;
-            public const int Sve = 0x0800;
+            public const long AdvSimd = 0x0001L;
+            public const long Aes = 0x0002L;
+            public const long Crc32 = 0x0004L;
+            public const long Dp = 0x0008L;
+            public const long Rdm = 0x0010L;
+            public const long Sha1 = 0x0020L;
+            public const long Sha256 = 0x0040L;
+            public const long Atomics = 0x0080L;
+            public const long Rcpc = 0x0100L;
+            public const long VectorT128 = 0x0200L;
+            public const long Rcpc2 = 0x0400L;
+            public const long Sve = 0x0800L;
 
-            public static void AddToBuilder(InstructionSetSupportBuilder builder, int flags)
+            public static void AddToBuilder(InstructionSetSupportBuilder builder, long flags)
             {
                 if ((flags & AdvSimd) != 0)
                     builder.AddSupportedInstructionSet("neon");
@@ -279,7 +282,7 @@ namespace ILCompiler
                     builder.AddSupportedInstructionSet("sve");
             }
 
-            public static int FromInstructionSet(InstructionSet instructionSet)
+            public static long FromInstructionSet(InstructionSet instructionSet)
             {
                 return instructionSet switch
                 {

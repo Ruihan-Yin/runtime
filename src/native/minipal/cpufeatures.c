@@ -139,9 +139,9 @@ static bool IsAvx512Enabled()
 #endif // defined(HOST_X86) || defined(HOST_AMD64)
 #endif // HOST_WINDOWS
 
-int minipal_getcpufeatures(void)
+long long minipal_getcpufeatures(void)
 {
-    int result = 0;
+    long long result = 0;
 
 #if defined(HOST_X86) || defined(HOST_AMD64)
 
@@ -332,6 +332,13 @@ int minipal_getcpufeatures(void)
             if ((cpuidInfo[CPUID_EDX] & (1 << 14)) != 0)
             {
                 result |= XArchIntrinsicConstants_Serialize;                                               // SERIALIZE
+            }
+
+            __cpuidex(cpuidInfo, 0x00000007, 0x00000001);
+
+            if ((cpuidInfo[CPUID_EDX] & (1 << 21)) != 0)                                                           // APX_F
+            {
+                result |= XArchIntrinsicConstants_Apx;
             }
         }
     }

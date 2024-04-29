@@ -44,6 +44,11 @@ enum XArchIntrinsicConstants
     XArchIntrinsicConstants_Avx10v1_V256 = 0x40000000,
     XArchIntrinsicConstants_Avx10v1_V512 = 0x80000000,
 };
+
+enum XArchIntrinsicExtraConstants
+{
+    XArchIntrinsicConstants_Apx = 0x0001,
+};
 #endif // HOST_X86 || HOST_AMD64
 
 #if defined(HOST_ARM64)
@@ -76,7 +81,7 @@ extern "C"
 {
 #endif // __cplusplus
 
-int minipal_getcpufeatures(void);
+long long minipal_getcpufeatures(void);
 bool minipal_detect_rosetta(void);
 
 #ifdef __cplusplus

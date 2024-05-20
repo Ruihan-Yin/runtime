@@ -257,7 +257,8 @@ bool emitter::IsEvexEncodableInstruction(instruction ins) const
 //
 bool emitter::IsRex2EncodableInstruction(instruction ins) const
 {
-    // TODO-apx: as we don't 
+    // TODO-apx: as currently we don't have apx machine, this test will fail for all case, disable it for now.
+
     // if(!UseRex2Encoding())
     // {
     //     return false;
@@ -318,7 +319,7 @@ bool emitter::IsLegacyMap1(code_t code) const
 //
 bool emitter::IsVexOrEvexEncodableInstruction(instruction ins) const
 {
-    if (!UseVEXEncoding())
+    if (!UseVEXEncoding()) 
     {
         return false;
     }
@@ -1891,6 +1892,7 @@ bool emitter::HasMaskReg(const instrDesc* id) const
 bool IsExtendedReg(regNumber reg)
 {
 #ifdef TARGET_AMD64
+    // TODO-apx: extend the gpr test, extended gprs should be from r8 to r31 after apx.
     return ((reg >= REG_R8) && (reg <= REG_R15)) || ((reg >= REG_XMM8) && (reg <= REG_XMM31));
 #else
     // X86 JIT operates in 32-bit mode and hence extended reg are not available.
@@ -2063,67 +2065,14 @@ emitter::code_t emitter::AddRexRPrefix(const instrDesc* id, code_t code)
             return code & 0xFF7FFFFFFFFFFFULL;
         }
     }
+    else if (TakesRex2Prefix(id) && IsRex2EncodableInstruction(ins))
+    {
+        // TODO-apx: there is no overlapping between REX2 and VEX/EVEX instructions so it should be fine to have the paths in this way.
+        assert(hasRex2Prefix(code));
+        return code |= 0x000400000000ULL; // REX2.B3
+    }
 
     return code | 0x4400000000ULL;
-}
-
-emitter::code_t emitter::AddRex2RPrefix(const instrDesc* id, regNumber reg, code_t code)
-{
-    instruction ins = id->idIns();
-    assert(IsRex2EncodableInstruction(ins));
-    
-    assert(!isSimdReg(reg));
-
-    if (reg & (1 << 3))
-    {
-        code |= 0x000400000000ULL; // REX2.R3
-    }
-
-    if(reg & (1 << 4))
-    {
-        code |= 0x004000000000ULL; // REX2.R4    
-    }
-    
-    return code;
-}
-
-emitter::code_t emitter::AddRex2XPrefix(const instrDesc* id, regNumber reg, code_t code)
-{
-    instruction ins = id->idIns();
-    assert(IsRex2EncodableInstruction(ins));
-
-    assert(!isSimdReg(reg));
-
-    if (reg & (1 << 3))
-    {
-        code |= 0x000200000000ULL; // REX2.X3
-    }
-
-    if(reg & (1 << 4))
-    {
-        code |= 0x002000000000ULL; // REX2.X4    
-    }
-
-    return code;
-}
-
-emitter::code_t emitter::AddRex2BPrefix(const instrDesc* id, regNumber reg, code_t code)
-{
-    instruction ins = id->idIns();
-    assert(IsRex2EncodableInstruction(ins));
-    assert(!isSimdReg(reg));
-
-    if (reg & (1 << 3))
-    {
-        code |= 0x000100000000ULL; // REX2.B3
-    }
-
-    if(reg & (1 << 4))
-    {
-        code |= 0x001000000000ULL; // REX2.B4    
-    }
-
-    return code;
 }
 
 emitter::code_t emitter::AddRexXPrefix(const instrDesc* id, code_t code)
@@ -2150,6 +2099,12 @@ emitter::code_t emitter::AddRexXPrefix(const instrDesc* id, code_t code)
             // X-bit is added in bit-inverted form.
             return code & 0xFFBFFFFFFFFFFFULL;
         }
+    }
+    else if (TakesRex2Prefix(id) && IsRex2EncodableInstruction(ins))
+    {
+        // TODO-apx: there is no overlapping between REX2 and VEX/EVEX instructions so it should be fine to have the paths in this way.
+        assert(hasRex2Prefix(code));
+        return code |= 0x000200000000ULL; // REX2.B3
     }
 
     return code | 0x4200000000ULL;
@@ -2179,6 +2134,12 @@ emitter::code_t emitter::AddRexBPrefix(const instrDesc* id, code_t code)
             // B-bit is added in bit-inverted form.
             return code & 0xFFDFFFFFFFFFFFULL;
         }
+    }
+    else if (TakesRex2Prefix(id) && IsRex2EncodableInstruction(ins))
+    {
+        // TODO-apx: there is no overlapping between REX2 and VEX/EVEX instructions so it should be fine to have the paths in this way.
+        assert(hasRex2Prefix(code));
+        return code |= 0x000100000000ULL; // REX2.B3
     }
 
     return code | 0x4100000000ULL;
@@ -3575,11 +3536,7 @@ inline unsigned emitter::insEncodeReg012(const instrDesc* id, regNumber reg, emi
     // which would require code != NULL.
     assert(code != nullptr || !IsExtendedReg(reg));
 
-    if (IsExtendedGPReg(reg) && TakesRex2Prefix(id) && code != nullptr)
-    {
-        *code = AddRex2BPrefix(id, reg, *code);
-    }
-    else if (IsExtendedReg(reg))
+    if (IsExtendedReg(reg))
     {
         if (isHighSimdReg(reg))
         {
@@ -3588,6 +3545,12 @@ inline unsigned emitter::insEncodeReg012(const instrDesc* id, regNumber reg, emi
         if (reg & 0x8)
         {
             *code = AddRexBPrefix(id, *code); // REX.B
+        }
+        if (false /*reg >= REG_R16 && reg <= REG_R31*/)
+        {
+            // seperate the encoding for REX2.B3/B4, REX2.B3 will be handled in `AddRexBPrefix`.
+            assert(TakesRex2Prefix(id));
+            *code |= 0x001000000000ULL; // REX2.B4
         }
     }
     else if ((EA_SIZE(size) == EA_1BYTE) && (reg > REG_RBX) && (code != nullptr))
@@ -3623,14 +3586,7 @@ inline unsigned emitter::insEncodeReg345(const instrDesc* id, regNumber reg, emi
     assert(code != nullptr || !IsExtendedReg(reg));
 
 
-    if (IsExtendedGPReg(reg) && TakesRex2Prefix(id) && code != nullptr)
-    {
-        // assert(reg >= 16);
-        *code = AddRex2RPrefix(id, reg, *code);
-
-        //  TODO-apx: May have some other cases not covered when OSIZE is 8b, see codes below for reference.
-    }
-    else if (IsExtendedReg(reg))
+    if (IsExtendedReg(reg))
     {
         if (isHighSimdReg(reg))
         {
@@ -3639,6 +3595,12 @@ inline unsigned emitter::insEncodeReg345(const instrDesc* id, regNumber reg, emi
         if (reg & 0x8)
         {
             *code = AddRexRPrefix(id, *code); // REX.R
+        }
+        if (false /*reg >= REG_R16 && reg <= REG_R31*/)
+        {
+            // seperate the encoding for REX2.R3/R4, REX2.R3 will be handled in `AddRexRPrefix`.
+            assert(TakesRex2Prefix(id));
+            *code |= 0x004000000000ULL; // REX2.R4
         }
     }
     else if ((EA_SIZE(size) == EA_1BYTE) && (reg > REG_RBX) && (code != nullptr))
@@ -3735,11 +3697,7 @@ inline unsigned emitter::insEncodeRegSIB(const instrDesc* id, regNumber reg, cod
     // which would require code != NULL.
     assert(code != nullptr || reg < REG_R8 || (reg >= REG_XMM0 && reg < REG_XMM8));
 
-    if (IsExtendedGPReg(reg) && TakesRex2Prefix(id) && code != nullptr)
-    {
-        *code = AddRex2XPrefix(id, reg, *code);
-    }
-    else if (IsExtendedReg(reg))
+    if (IsExtendedReg(reg))
     {
         if (isHighSimdReg(reg))
         {
@@ -3747,7 +3705,13 @@ inline unsigned emitter::insEncodeRegSIB(const instrDesc* id, regNumber reg, cod
         }
         if (reg & 0x8)
         {
-            *code = AddRexXPrefix(id, *code); // REX.B
+            *code = AddRexXPrefix(id, *code); // REX.X
+        }
+        if (false /*reg >= REG_R16 && reg <= REG_R31*/)
+        {
+            // seperate the encoding for REX2.X3/X4, REX2.X3 will be handled in `AddRexXPrefix`.
+            assert(TakesRex2Prefix(id));
+            *code |= 0x002000000000ULL; // REX2.X4
         }
     }
     unsigned regBits = RegEncoding(reg);
@@ -13388,14 +13352,14 @@ BYTE* emitter::emitOutputAM(BYTE* dst, instrDesc* id, code_t code, CnsVal* addc)
     // TODO-apx:
     // Logic here is basically checking if R/X/B bits are needed.
     // Seems correct but may need better naming or arrangement.
-    if (IsExtendedReg(reg, EA_PTRSIZE) || IsExtendedGPReg(reg))
+    if (IsExtendedReg(reg, EA_PTRSIZE))
     {
         insEncodeReg012(id, reg, EA_PTRSIZE, &code);
         // TODO-Cleanup: stop casting RegEncoding() back to a regNumber.
         reg = (regNumber)RegEncoding(reg);
     }
 
-    if (IsExtendedReg(rgx, EA_PTRSIZE)|| IsExtendedGPReg(rgx))
+    if (IsExtendedReg(rgx, EA_PTRSIZE))
     {
         insEncodeRegSIB(id, rgx, &code);
         // TODO-Cleanup: stop casting RegEncoding() back to a regNumber.

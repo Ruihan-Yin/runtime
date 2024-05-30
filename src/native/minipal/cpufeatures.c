@@ -333,13 +333,6 @@ long long minipal_getcpufeatures(void)
             {
                 result |= XArchIntrinsicConstants_Serialize;                                               // SERIALIZE
             }
-
-            __cpuidex(cpuidInfo, 0x00000007, 0x00000001);
-
-            if ((cpuidInfo[CPUID_EDX] & (1 << 21)) != 0)                                                           // APX_F
-            {
-                result |= XArchIntrinsicConstants_Apx;
-            }
         }
     }
 

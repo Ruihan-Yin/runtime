@@ -1454,12 +1454,6 @@ void EEJitManager::SetCpuInfo()
     {
         CPUCompileFlags.Set(InstructionSet_AVX10v1_V512);
     }
-
-    if (((cpuFeatures & ((long long)XArchIntrinsicConstants_Apx << 32)) != 0))
-    {
-        printf("Ruihan: Setting APX\n");
-        CPUCompileFlags.Set(InstructionSet_APX);
-    }
 #elif defined(TARGET_ARM64)
 
 #if !defined(TARGET_WINDOWS)

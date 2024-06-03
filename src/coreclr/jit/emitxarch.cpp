@@ -2760,11 +2760,6 @@ unsigned emitter::emitGetRexPrefixSize(instruction ins)
         return 0;
     }
 
-    if (IsRex2EncodableInstruction(ins))
-    {
-        return 2;
-    }
-
     // If not AVX, then we would need 1-byte to encode REX prefix.
     return 1;
 }

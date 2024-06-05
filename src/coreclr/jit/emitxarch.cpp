@@ -2864,13 +2864,31 @@ unsigned emitter::emitGetAdjustedSize(instrDesc* id, code_t code) const
         // The 4-Byte SSE instructions require one additional byte to hold the ModRM byte
         adjustedSize++;
     }
-    else
+    else if (IsRex2EncodableInstruction(ins))
     {
-        if(TakesRex2Prefix(id))
+        unsigned prefixAdjustedSize = 0;
+        if (TakesRex2Prefix(id))
         {
-            adjustedSize += 2;
+            prefixAdjustedSize = 2;
+            // If the opcode will be prefixed by REX2, then all the map-1-legacy instructions can remove the escape prefix
+            if(IsLegacyMap1(code))
+            {
+                prefixAdjustedSize -= 1;
+            }
         }
 
+        adjustedSize = prefixAdjustedSize;
+        
+        emitAttr attr = id->idOpSize();
+
+        if ((attr == EA_2BYTE) && (ins != INS_movzx) && (ins != INS_movsx))
+        {
+            // Most 16-bit operand instructions will need a 0x66 prefix.
+            adjustedSize++;
+        }
+    }
+    else
+    {
         if (ins == INS_crc32)
         {
             // Adjust code size for CRC32 that has 4-byte opcode but does not use SSE38 or EES3A encoding.
@@ -2910,7 +2928,7 @@ unsigned emitter::emitGetPrefixSize(instrDesc* id, code_t code, bool includeRexP
         return emitGetVexPrefixSize(id);
     }
 
-    if (IsRex2EncodableInstruction(id->idIns()) && hasRex2Prefix(code))
+    if (hasRex2Prefix(code))
     {
         return 2;
     }
@@ -14195,6 +14213,12 @@ BYTE* emitter::emitOutputSV(BYTE* dst, instrDesc* id, code_t code, CnsVal* addc)
     // Therefore, add VEX or EVEX prefix if one is not already present.
     code = AddSimdPrefixIfNeededAndNotPresent(id, code, size);
 
+    if(TakesRex2Prefix(id))
+    {
+        // There are some callers who already add prefix and call this routine.
+        code = hasRex2Prefix(code) ? code : AddRex2Prefix(ins, code);
+    }
+
     // Compute the REX prefix
     if (TakesRexWPrefix(id))
     {
@@ -15963,6 +15987,11 @@ BYTE* emitter::emitOutputRI(BYTE* dst, instrDesc* id)
         // This is INS_mov and will not take VEX prefix
         assert(!TakesVexPrefix(ins));
 
+        if(TakesRex2Prefix(id))
+        {
+            code = AddRex2Prefix(ins, code);
+        }
+
         if (TakesRexWPrefix(id))
         {
             code = AddRexWPrefix(id, code);
@@ -16071,7 +16100,14 @@ BYTE* emitter::emitOutputRI(BYTE* dst, instrDesc* id)
         else
         {
             code = insCodeMI(ins);
-            code = AddSimdPrefixIfNeeded(id, code, size);
+            if(TakesRex2Prefix(id))
+            {
+                code = AddRex2Prefix(ins, code);
+            }
+            else
+            {
+                code = AddSimdPrefixIfNeeded(id, code, size);
+            }
             code = insEncodeMIreg(id, reg, size, code);
         }
     }
@@ -18083,6 +18119,11 @@ size_t emitter::emitOutputInstr(insGroup* ig, instrDesc* id, BYTE** dp)
                 {
                     // encode source operand reg in 'vvvv' bits in 1's complement form
                     code = insEncodeReg3456(id, id->idReg1(), size, code);
+                }
+
+                if (TakesRex2Prefix(id))
+                {
+                    code = AddRex2Prefix(ins, code);
                 }
 
                 regcode = (insEncodeReg345(id, id->idReg1(), size, &code) << 8);

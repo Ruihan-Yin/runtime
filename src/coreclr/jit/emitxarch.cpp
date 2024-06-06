@@ -15315,6 +15315,11 @@ BYTE* emitter::emitOutputR(BYTE* dst, instrDesc* id)
 
             code = AddSimdPrefixIfNeeded(id, code, size);
 
+            if (TakesRex2Prefix(id))
+            {
+                code = AddRex2Prefix(ins, code);
+            }
+
             if (TakesRexWPrefix(id))
             {
                 code = AddRexWPrefix(id, code);
@@ -17430,6 +17435,11 @@ size_t emitter::emitOutputInstr(insGroup* ig, instrDesc* id, BYTE** dp)
             if (size != EA_1BYTE)
             {
                 code |= 1;
+            }
+
+            if(TakesRex2Prefix(id))
+            {
+                code = AddRex2Prefix(ins, code);
             }
 
             // Emit the REX prefix if it exists

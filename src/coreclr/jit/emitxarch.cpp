@@ -2608,7 +2608,7 @@ unsigned emitter::emitOutputRexOrSimdPrefixIfNeeded(instruction ins, BYTE* dst, 
         {
             // some map-1 instructions have opcode in forms like:
             // XX0F, remove the leading 0x0F byte as it have been recoreded in REX2.
-            code = code >> 2;
+            code = code >> 8;
         }
 
         BYTE check = (code >> 24) & 0xFF;
@@ -6260,9 +6260,12 @@ void emitter::emitIns_I(instruction ins, emitAttr attr, cnsval_ssize_t val)
             NO_WAY("unexpected instruction");
     }
 
+
     id = emitNewInstrSC(attr, val);
     id->idIns(ins);
     id->idInsFmt(IF_CNS);
+
+    sz += emitGetAdjustedSize(id, insCodeMI(ins));
     id->idCodeSize(sz);
 
     dispIns(id);
@@ -7023,6 +7026,7 @@ void emitter::emitIns_R_R_I(
     SetEvexEmbMaskIfNeeded(id, instOptions);
 
     UNATIVE_OFFSET sz = emitInsSizeRR(id, code, ival);
+    sz += emitGetAdjustedSize(id, code);
     id->idCodeSize(sz);
 
     dispIns(id);
@@ -13296,7 +13300,7 @@ BYTE* emitter::emitOutputAM(BYTE* dst, instrDesc* id, code_t code, CnsVal* addc)
     // Emit SIMD prefix if required
     // There are some callers who already add SIMD prefix and call this routine.
     // Therefore, add SIMD prefix is one is not already present.
-    code = AddSimdPrefixIfNeededAndNotPresent(id, code, size);
+    code = AddX86PrefixIfNeededAndNotPresent(id, code, size);
 
     // For this format, moves do not support a third operand, so we only need to handle the binary ops.
     if (TakesSimdPrefix(id))
@@ -14213,13 +14217,7 @@ BYTE* emitter::emitOutputSV(BYTE* dst, instrDesc* id, code_t code, CnsVal* addc)
     // Add VEX or EVEX prefix if required.
     // There are some callers who already add prefix and call this routine.
     // Therefore, add VEX or EVEX prefix if one is not already present.
-    code = AddSimdPrefixIfNeededAndNotPresent(id, code, size);
-
-    if(TakesRex2Prefix(id))
-    {
-        // There are some callers who already add prefix and call this routine.
-        code = hasRex2Prefix(code) ? code : AddRex2Prefix(ins, code);
-    }
+    code = AddX86PrefixIfNeededAndNotPresent(id, code, size);
 
     // Compute the REX prefix
     if (TakesRexWPrefix(id))
@@ -15188,6 +15186,11 @@ BYTE* emitter::emitOutputR(BYTE* dst, instrDesc* id)
                     code |= 0x1;
                 }
 
+                if(TakesRex2Prefix(id))
+                {
+                    code = AddRex2Prefix(ins, code);
+                }
+
                 if (TakesRexWPrefix(id))
                 {
                     code = AddRexWPrefix(id, code);
@@ -15220,6 +15223,13 @@ BYTE* emitter::emitOutputR(BYTE* dst, instrDesc* id)
             assert(size == EA_PTRSIZE);
             code = insEncodeOpreg(id, reg, size);
 
+            // TODO-xarch-apx: it is TBD if we will use REX2 for PUSH/POP,
+            //                 the implementation help is optional.
+            if(TakesRex2Prefix(id))
+            {
+                code = AddRex2Prefix(ins, code);
+            }
+
             assert(!TakesSimdPrefix(id));
             assert(!TakesRexWPrefix(id));
 
@@ -15240,6 +15250,11 @@ BYTE* emitter::emitOutputR(BYTE* dst, instrDesc* id)
 
             code = insCodeRR(ins);
 
+            if(TakesRex2Prefix(id))
+            {
+                code = AddRex2Prefix(ins, code);
+            }
+
             if (TakesRexWPrefix(id))
             {
                 code = AddRexWPrefix(id, code);
@@ -15247,11 +15262,14 @@ BYTE* emitter::emitOutputR(BYTE* dst, instrDesc* id)
 
             // Register...
             unsigned regcode = insEncodeReg012(id, reg, size, &code);
-
+            
             // Output the REX prefix
             dst += emitOutputRexOrSimdPrefixIfNeeded(ins, dst, code);
 
-            dst += emitOutputWord(dst, code | (regcode << 8));
+            // bswap has a special register encoding form,
+            // instead of using ModR/M byte, the register selection is
+            // embedded into the opcode.
+            dst += emitOutputByte(dst, code | regcode);
             break;
         }
 
@@ -15277,15 +15295,22 @@ BYTE* emitter::emitOutputR(BYTE* dst, instrDesc* id)
 
             code = insEncodeMRreg(id, reg, EA_1BYTE, insCodeMR(ins));
 
-            // Output the REX prefix
-            dst += emitOutputRexOrSimdPrefixIfNeeded(ins, dst, code);
+            if(TakesRex2Prefix(id))
+            {
+                code = AddRex2Prefix(ins, code);
+                dst += emitOutputRexOrSimdPrefixIfNeeded(ins, dst, code);
+                dst += emitOutputWord(dst, code & 0x0000FFFF);
+            }
+            else
+            {
+                // Output the REX prefix
+                dst += emitOutputRexOrSimdPrefixIfNeeded(ins, dst, code);
+                // We expect this to always be a 'big' opcode
+                assert(code & 0x00FF0000);
 
-            // We expect this to always be a 'big' opcode
-            assert(code & 0x00FF0000);
-
-            dst += emitOutputByte(dst, code >> 16);
-            dst += emitOutputWord(dst, code & 0x0000FFFF);
-
+                dst += emitOutputByte(dst, code >> 16);
+                dst += emitOutputWord(dst, code & 0x0000FFFF);
+            }
             break;
 
         case INS_mulEAX:
@@ -16335,9 +16360,21 @@ BYTE* emitter::emitOutputIV(BYTE* dst, instrDesc* id)
         case INS_push:
             code = insCodeMI(ins);
 
+            // TODO-xarch-apx: it is TBD if we will use REX2 for PUSH/POP,
+            //                 the implementation help is optional.
+            if(TakesRex2Prefix(id))
+            {
+                code = AddRex2Prefix(ins, code);
+            }
+
             // Does the operand fit in a byte?
             if (valInByte)
             {
+                if(TakesRex2Prefix(id))
+                {
+                    dst  += emitOutputRexOrSimdPrefixIfNeeded(ins, dst, code);
+                }
+
                 dst += emitOutputByte(dst, code | 2);
                 dst += emitOutputByte(dst, val);
             }
@@ -17538,7 +17575,11 @@ size_t emitter::emitOutputInstr(insGroup* ig, instrDesc* id, BYTE** dp)
             {
                 code = insCodeMR(ins);
                 // Emit the VEX prefix if it exists
-                code = AddSimdPrefixIfNeeded(id, code, size);
+                code = AddX86PrefixIfNeeded(id, code, size);
+                if(size == EA_2BYTE)
+                {
+                    dst += emitOutputByte(dst, 0x66);
+                }
                 code = insEncodeMRreg(id, code);
                 mReg = id->idReg1();
                 rReg = id->idReg2();
@@ -17940,7 +17981,7 @@ size_t emitter::emitOutputInstr(insGroup* ig, instrDesc* id, BYTE** dp)
         case IF_SWR_RRD_CNS:
         case IF_SRW_RRD_CNS:
         {
-            assert(IsAvx512OrPriorInstruction(ins));
+            assert(IsAvx512OrPriorInstruction(ins) || (ins == INS_shld) || (ins == INS_shrd));
             emitGetInsAmdCns(id, &cnsVal);
             dst = emitOutputSV(dst, id, insCodeMR(ins), &cnsVal);
             sz  = emitSizeOfInsDsc_CNS(id);

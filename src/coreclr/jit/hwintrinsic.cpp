@@ -516,6 +516,7 @@ static const HWIntrinsicIsaRange hwintrinsicIsaRangeArray[] = {
     { NI_Illegal, NI_Illegal },                                 // VectorT128
     { NI_Illegal, NI_Illegal },                                 // VectorT256
     { NI_Illegal, NI_Illegal },                                 // VectorT512
+    { NI_Illegal, NI_Illegal },                                 // APX
     { FIRST_NI_X86Base_X64, LAST_NI_X86Base_X64 },
     { FIRST_NI_SSE_X64, LAST_NI_SSE_X64 },
     { FIRST_NI_SSE2_X64, LAST_NI_SSE2_X64 },
@@ -626,6 +627,20 @@ static void ValidateHWIntrinsicIsaRange(CORINFO_InstructionSet isa, const HWIntr
         return;
     }
     assert(isaRange.LastId != NI_Illegal);
+
+    if(HWIntrinsicInfo::lookupIsa(isaRange.FirstId) != isa)
+    {
+        printf("Ruihan: FirstId: %d\n", isaRange.FirstId);
+        printf("Ruihan: lookupIsa(FirstId): %d\n", HWIntrinsicInfo::lookupIsa(isaRange.FirstId));
+        printf("Ruihan: isa: %d\n", isa);
+    }
+
+    if(HWIntrinsicInfo::lookupIsa(isaRange.LastId) != isa)
+    {
+        printf("Ruihan: LastId: %d\n", isaRange.LastId);
+        printf("Ruihan: lookupIsa(LastId): %d\n", HWIntrinsicInfo::lookupIsa(isaRange.LastId));
+        printf("Ruihan: isa: %d\n", isa);
+    }
 
     // Both entries should belong to the expected ISA
     assert(HWIntrinsicInfo::lookupIsa(isaRange.FirstId) == isa);

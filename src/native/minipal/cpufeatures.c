@@ -155,6 +155,10 @@ static uint32_t avx512StateSupport()
     return ((_xgetbv(0) & 0xE6) == 0x0E6) ? 1 : 0;
 }
 
+#ifndef XSTATE_MASK_APX
+#define XSTATE_MASK_APX (0x80000)
+#endif // XSTATE_MASK_APX
+
 static uint32_t apxStateSupport()
 {
 #if defined(TARGET_X86)

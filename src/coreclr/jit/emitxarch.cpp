@@ -7022,7 +7022,6 @@ void emitter::emitIns_R_R_I(
     SetEvexEmbMaskIfNeeded(id, instOptions);
 
     UNATIVE_OFFSET sz = emitInsSizeRR(id, code, ival);
-    sz += emitGetAdjustedSize(id, code);
     id->idCodeSize(sz);
 
     dispIns(id);

@@ -364,6 +364,7 @@ RELEASE_CONFIG_INTEGER(JitNoInline, W("JitNoInline"), 0)
 
 #if defined(DEBUG)
 CONFIG_INTEGER(JitStressRex2Encoding, W("JitStressRex2Encoding"), 0) // Enable rex2 encoding for legacy instructions.                                                                     
+CONFIG_INTEGER(JitBypassAPXCheck, W("JitBypassAPXCheck"), 0) // Bypass APX CPUID check.                                                                     
 #endif
 
 // clang-format off

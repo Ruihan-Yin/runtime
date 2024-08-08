@@ -9946,12 +9946,12 @@ public:
     }
 
     //------------------------------------------------------------------------
-    // canUseRex2Encoding - Answer the question: Is Rex2 encoding supported on this target.
+    // canUseApxEncodings - Answer the question: are Apx encodings - rex2 and promoted EVEX supported on this target.
     //
     // Returns:
-    //    `true` if Rex2 encoding is supported, `false` if not.
+    //    `true` if Apx encodings are supported, `false` if not.
     //
-    bool canUseRex2Encoding() const
+    bool canUseApxEncodings() const
     {
 #ifdef DEBUG
         if (JitConfig.JitBypassAPXCheck())
@@ -10008,6 +10008,24 @@ private:
     {
 #ifdef DEBUG
         if (JitConfig.JitStressRex2Encoding())
+        {
+            return true;
+        }
+#endif // DEBUG
+
+        return false;
+    }
+
+    //------------------------------------------------------------------------
+    // DoJitStressPromotedEvexEncoding- Answer the question: Do we force promoted EVEX encoding.
+    //
+    // Returns:
+    //    `true` if user requests promoted EVEX encoding.
+    //
+    bool DoJitStressPromotedEvexEncoding() const
+    {
+#ifdef DEBUG
+        if (JitConfig.JitStressPromotedEVEXEncoding())
         {
             return true;
         }

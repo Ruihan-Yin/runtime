@@ -332,6 +332,18 @@ void SetUseRex2Encoding(bool value)
     useRex2Encodings = value;
 }
 
+// Is Promoted EVEX encoding supported.
+bool usePromotedEVEXEncodings;
+bool UsePromotedEVEXEncoding() const
+{
+    return usePromotedEVEXEncodings;
+}
+
+void SetUsePromotedEVEXEncoding(bool value)
+{
+    usePromotedEVEXEncodings = value;
+}
+
 //------------------------------------------------------------------------
 // UseSimdEncoding: Returns true if either VEX or EVEX encoding is supported
 // contains Evex prefix.
@@ -349,6 +361,7 @@ bool UseSimdEncoding() const
 #define EVEX_PREFIX_CODE 0x6200000000000000ULL
 
 bool TakesEvexPrefix(const instrDesc* id) const;
+bool TakesApxExtendedEvexPrefix(const instrDesc* id) const;
 
 //------------------------------------------------------------------------
 // hasEvexPrefix: Returns true if the instruction encoding already
@@ -405,11 +418,7 @@ code_t AddSimdPrefixIfNeeded(const instrDesc* id, code_t code, emitAttr size)
 //
 code_t AddX86PrefixIfNeeded(const instrDesc* id, code_t code, emitAttr size)
 {
-    // TODO-xarch-apx:
-    // consider refactor this part with AddSimdPrefixIfNeeded as a lot of functionality
-    // of these functions are overlapping.
-
-    if (TakesEvexPrefix(id))
+    if (TakesEvexPrefix(id) || TakesApxExtendedEvexPrefix(id))
     {
         return AddEvexPrefix(id, code, size);
     }
@@ -445,7 +454,7 @@ code_t AddX86PrefixIfNeededAndNotPresent(const instrDesc* id, code_t code, emitA
     // consider refactor this part with AddSimdPrefixIfNeeded as a lot of functionality
     // of these functions are overlapping.
 
-    if (TakesEvexPrefix(id))
+    if (TakesEvexPrefix(id) || TakesApxExtendedEvexPrefix(id))
     {
         return !hasEvexPrefix(code) ? AddEvexPrefix(id, code, size) : code;
     }
@@ -508,6 +517,27 @@ void SetEvexEmbMaskIfNeeded(instrDesc* id, insOpts instOptions)
     else
     {
         assert((instOptions & INS_OPTS_EVEX_z_MASK) == 0);
+    }
+}
+
+//------------------------------------------------------------------------
+// SetEvexNdIfNeeded: set NDD form - new data destination if needed.
+//
+// Arguments:
+//    id          - instruction descriptor
+//    instOptions - emit options
+//
+void SetEvexNdIfNeeded(instrDesc* id, insOpts instOptions)
+{
+    if ((instOptions & INS_OPTS_EVEX_nd_MASK) != 0)
+    {
+        assert(UsePromotedEVEXEncoding());
+        assert(IsApxNDDEncodableInstruction(id->idIns()));
+        id->idSetEvexNdContext();
+    }
+    else
+    {
+        assert((instOptions & INS_OPTS_EVEX_nd_MASK) == 0);
     }
 }
 

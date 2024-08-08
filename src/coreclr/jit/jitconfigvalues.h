@@ -363,7 +363,8 @@ RELEASE_CONFIG_INTEGER(EnableMultiRegLocals, W("EnableMultiRegLocals"), 1) // En
 RELEASE_CONFIG_INTEGER(JitNoInline, W("JitNoInline"), 0)
 
 #if defined(DEBUG)
-CONFIG_INTEGER(JitStressRex2Encoding, W("JitStressRex2Encoding"), 0) // Enable rex2 encoding for legacy instructions.                                                                     
+CONFIG_INTEGER(JitStressRex2Encoding, W("JitStressRex2Encoding"), 0) // Enable rex2 encoding for compatible instructions.                                                                     
+CONFIG_INTEGER(JitStressPromotedEVEXEncoding, W("JitStressPromotedEVEXEncoding"), 0) // Enable promoted EVEX encoding for compatible instructions.                                                                     
 CONFIG_INTEGER(JitBypassAPXCheck, W("JitBypassAPXCheck"), 0) // Bypass APX CPUID check.                                                                     
 #endif
 

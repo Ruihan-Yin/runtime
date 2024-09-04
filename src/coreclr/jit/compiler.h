@@ -9710,27 +9710,12 @@ public:
     }
 
     //------------------------------------------------------------------------
-    // canUseRex2Encoding - Answer the question: Is Rex2 encoding supported on this target.
+    // canUseApxEncodings - Answer the question: are Apx encodings - rex2 and promoted EVEX supported on this target.
     //
     // Returns:
-    //    `true` if Rex2 encoding is supported, `false` if not.
+    //    `true` if Apx encodings are supported, `false` if not.
     //
-    bool canUseRex2Encoding() const
-    {
-        if(JitConfig.JitBypassAPXCheck())
-        {
-            return true;
-        }
-        return compOpportunisticallyDependsOn(InstructionSet_APX);
-    }
-
-    //------------------------------------------------------------------------
-    // canUsePromotedEvexEncoding - Answer the question: Is promoted EVEX encoding supported on this target.
-    //
-    // Returns:
-    //    `true` if promoted EVEX encoding is supported, `false` if not.
-    //
-    bool canUsePromotedEvexEncoding() const
+    bool canUseApxEncodings() const
     {
         if(JitConfig.JitBypassAPXCheck())
         {

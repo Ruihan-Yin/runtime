@@ -2558,6 +2558,7 @@ private:
     void      spillIntArgRegsToShadowSlots();
 
 #ifdef TARGET_XARCH
+    void emitInsNddBinary(instruction ins, emitAttr attr, regNumber targetReg, GenTree* treeNode);
     bool emitIsInstrWritingToReg(instrDesc* id, regNumber reg);
     bool emitDoesInsModifyFlags(instruction ins);
 #endif // TARGET_XARCH
@@ -3994,7 +3995,18 @@ emitAttr emitter::emitGetMemOpSize(instrDesc* id) const
                 return EA_8BYTE;
 
             default:
-                unreached();
+            {
+                if (IsApxNDDEncodableInstruction(id->idIns()))
+                {
+                    // Evex.b for embedded broadcast and Evex.nd for NDD uses the same bit in EVEX,
+                    // in the case of Evex.nd, no need to do special handling on OSIZE.
+                    return emitGetBaseMemOpSize(id);
+                }
+                else
+                {
+                    unreached();
+                }
+            }
         }
     }
     else

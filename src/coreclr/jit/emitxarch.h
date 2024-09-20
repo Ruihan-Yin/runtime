@@ -138,6 +138,7 @@ bool IsVexEncodableInstruction(instruction ins) const;
 bool IsEvexEncodableInstruction(instruction ins) const;
 bool IsRex2EncodableInstruction(instruction ins) const;
 bool IsApxNDDEncodableInstruction(instruction ins) const;
+bool IsApxExtendedEvexInstruction(instruction ins) const;
 bool IsShiftInstruction(instruction ins) const;
 bool IsLegacyMap1(code_t code) const;
 bool IsVexOrEvexEncodableInstruction(instruction ins) const;
@@ -359,7 +360,7 @@ bool UseSimdEncoding() const
 #define EVEX_PREFIX_CODE 0x6200000000000000ULL
 
 bool TakesEvexPrefix(const instrDesc* id) const;
-bool TakesLegacyPromotedEvexPrefix(const instrDesc* id) const;
+bool TakesApxExtendedEvexPrefix(const instrDesc* id) const;
 
 //------------------------------------------------------------------------
 // hasEvexPrefix: Returns true if the instruction encoding already
@@ -416,7 +417,7 @@ code_t AddSimdPrefixIfNeeded(const instrDesc* id, code_t code, emitAttr size)
 //
 code_t AddX86PrefixIfNeeded(const instrDesc* id, code_t code, emitAttr size)
 {
-    if (TakesEvexPrefix(id) || TakesLegacyPromotedEvexPrefix(id))
+    if (TakesEvexPrefix(id) || TakesApxExtendedEvexPrefix(id))
     {
         return AddEvexPrefix(id, code, size);
     }
@@ -452,7 +453,7 @@ code_t AddX86PrefixIfNeededAndNotPresent(const instrDesc* id, code_t code, emitA
     // consider refactor this part with AddSimdPrefixIfNeeded as a lot of functionality
     // of these functions are overlapping.
 
-    if (TakesEvexPrefix(id) || TakesLegacyPromotedEvexPrefix(id))
+    if (TakesEvexPrefix(id) || TakesApxExtendedEvexPrefix(id))
     {
         return !hasEvexPrefix(code) ? AddEvexPrefix(id, code, size) : code;
     }

@@ -288,7 +288,7 @@ bool emitter::IsApxNDDEncodableInstruction(instruction ins) const
         return false;
     }
 
-    if(JitConfig.JitDisableNDD())
+    if(!JitConfig.JitEnableApxNDD())
     {
         return false;
     }
@@ -313,7 +313,7 @@ bool emitter::IsApxExtendedEvexInstruction(instruction ins) const
         return false;
     }
 
-    if(JitConfig.JitDisableNDD())
+    if(!JitConfig.JitEnableApxNDD())
     {
         return false;
     }

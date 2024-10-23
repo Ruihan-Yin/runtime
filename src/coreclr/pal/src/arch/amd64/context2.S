@@ -183,13 +183,9 @@ LOCAL_LABEL(Done_Restore_CONTEXT_FLOATING_POINT):
     kmovq k6, qword ptr [rdi + (CONTEXT_KMask0 + 6 * 8)]
     kmovq k7, qword ptr [rdi + (CONTEXT_KMask0 + 7 * 8)]
 
-    // TODO-xarch-apx: the definition of XSTATE mask value for APX is now missing on the OS level, 
-    //                 we are currently using bare value to hack it through the build process, and test the implementation through CI.
-    //                 those changes will be removed when we have the OS support for APX.
-    test    BYTE PTR [rdi + CONTEXT_XStateFeaturesMask], 524288
+    test    BYTE PTR [rdi + CONTEXT_XStateFeaturesMask], XSTATE_MASK_APX
     je      LOCAL_LABEL(Done_Restore_CONTEXT_XSTATE)
 
-    // Restore the EGPR state, EGPR use previous MPX field, need to add an offset.
     mov r16, qword ptr [rdi + CONTEXT_Egpr + 0 * 8]
     mov r17, qword ptr [rdi + CONTEXT_Egpr + 1 * 8]
     mov r18, qword ptr [rdi + CONTEXT_Egpr + 2 * 8]

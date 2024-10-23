@@ -22,7 +22,10 @@ namespace ILCompiler
             if (owningType.IsIntrinsic && !owningType.HasInstantiation)
             {
                 var owningMdType = (MetadataType)owningType;
-                string ns = owningMdType.ContainingType?.Namespace ?? owningMdType.Namespace;
+                DefType containingType = owningMdType.ContainingType;
+                string ns = containingType?.ContainingType?.Namespace ??
+                            containingType?.Namespace ??
+                            owningMdType.Namespace;
                 return method.Context.Target.Architecture switch
                 {
                     TargetArchitecture.ARM64 => ns == "System.Runtime.Intrinsics.Arm",
@@ -75,7 +78,7 @@ namespace ILCompiler
             public const int Serialize = 0x20000;
             public const int Avx10v1 = 0x40000;
             public const int Evex = 0x80000;
-            public const int Apx = 0x80000;
+            public const int Apx = 0x100000;
 
             public static void AddToBuilder(InstructionSetSupportBuilder builder, int flags)
             {

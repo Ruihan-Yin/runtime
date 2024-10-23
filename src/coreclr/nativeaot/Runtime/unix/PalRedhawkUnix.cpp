@@ -42,6 +42,7 @@
 #include <sys/time.h>
 #include <cstdarg>
 #include <signal.h>
+#include <minipal/thread.h>
 
 #if HAVE_PTHREAD_GETTHREADID_NP
 #include <pthread_np.h>
@@ -636,6 +637,11 @@ REDHAWK_PALEXPORT UInt32_BOOL REDHAWK_PALAPI __stdcall PalSwitchToThread()
     return false;
 }
 
+REDHAWK_PALEXPORT UInt32_BOOL REDHAWK_PALAPI PalAreShadowStacksEnabled()
+{
+    return false;
+}
+
 extern "C" UInt32_BOOL CloseHandle(HANDLE handle)
 {
     if ((handle == NULL) || (handle == INVALID_HANDLE_VALUE))
@@ -709,6 +715,19 @@ REDHAWK_PALEXPORT bool REDHAWK_PALAPI PalStartBackgroundWork(_In_ BackgroundCall
     ASSERT(st2 == 0);
 
     return st == 0;
+}
+
+REDHAWK_PALIMPORT bool REDHAWK_PALAPI PalSetCurrentThreadName(const char* name)
+{
+    // Ignore requests to set the main thread name because
+    // it causes the value returned by Process.ProcessName to change.
+    if ((pid_t)PalGetCurrentOSThreadId() != getpid())
+    {
+        int setNameResult = minipal_set_thread_name(pthread_self(), name);
+        (void)setNameResult; // used
+        assert(setNameResult == 0);
+    }
+    return true;
 }
 
 REDHAWK_PALEXPORT bool REDHAWK_PALAPI PalStartBackgroundGCThread(_In_ BackgroundCallback callback, _In_opt_ void* pCallbackContext)
@@ -945,17 +964,6 @@ extern "C" void LeaveCriticalSection(CRITICAL_SECTION * lpCriticalSection)
     pthread_mutex_unlock(&lpCriticalSection->mutex);
 }
 
-extern "C" UInt32_BOOL IsDebuggerPresent()
-{
-#ifdef HOST_WASM
-    // For now always true since the browser will handle it in case of WASM.
-    return UInt32_TRUE;
-#else
-    // UNIXTODO: Implement this function
-    return UInt32_FALSE;
-#endif
-}
-
 extern "C" UInt32_BOOL SetEvent(HANDLE event)
 {
     EventUnixHandle* unixHandle = (EventUnixHandle*)event;
@@ -1068,6 +1076,11 @@ REDHAWK_PALEXPORT UInt32_BOOL REDHAWK_PALAPI PalRegisterHijackCallback(_In_ PalH
 #endif // __APPLE__
 
     return AddSignalHandler(INJECT_ACTIVATION_SIGNAL, ActivationHandler, &g_previousActivationHandler);
+}
+
+REDHAWK_PALIMPORT HijackFunc* REDHAWK_PALAPI PalGetHijackTarget(HijackFunc* defaultHijackTarget)
+{
+    return defaultHijackTarget;
 }
 
 REDHAWK_PALEXPORT void REDHAWK_PALAPI PalHijack(HANDLE hThread, _In_opt_ void* pThreadToHijack)
@@ -1268,19 +1281,5 @@ extern "C" uint64_t PalQueryPerformanceFrequency()
 
 extern "C" uint64_t PalGetCurrentOSThreadId()
 {
-#if defined(__linux__)
-    return (uint64_t)syscall(SYS_gettid);
-#elif defined(__APPLE__)
-    uint64_t tid;
-    pthread_threadid_np(pthread_self(), &tid);
-    return (uint64_t)tid;
-#elif HAVE_PTHREAD_GETTHREADID_NP
-    return (uint64_t)pthread_getthreadid_np();
-#elif HAVE_LWP_SELF
-    return (uint64_t)_lwp_self();
-#else
-    // Fallback in case we don't know how to get integer thread id on the current platform
-    return (uint64_t)pthread_self();
-#endif
+    return (uint64_t)minipal_get_current_thread_id();
 }
-

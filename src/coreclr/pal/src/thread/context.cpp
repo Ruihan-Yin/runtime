@@ -317,12 +317,12 @@ typedef int __ptrace_request;
 #ifndef XSTATE_APX
 #define XSTATE_APX (19)
 #endif  // XSTATE_APX
-#endif  // HOST_AMD64
 
 #ifndef XSTATE_MASK_APX
 #define XSTATE_MASK_APX (1 << XSTATE_APX)
 #endif  // XSTATE_MASK_APX
 #endif  // HOST_AMD64 && XSTATE_SUPPORTED
+
 #if defined(XSTATE_SUPPORTED) || defined(HOST_AMD64) && defined(HAVE_MACH_EXCEPTIONS)
 bool Xstate_IsAvx512Supported()
 {
@@ -416,7 +416,7 @@ bool Xstate_IsApxSupported()
 
         __cpuidex(cpuidInfo, 0x0000000D, 0x00000000);
 
-        if ((cpuidInfo[CPUID_EAX] & XSATE_MASK_APX) == XSATE_MASK_APX)
+        if ((cpuidInfo[CPUID_EAX] & XSTATE_MASK_APX) == XSTATE_MASK_APX)
         {
             // Knight's Landing and Knight's Mill shipped without all 5 of the "baseline"
             // AVX-512 ISAs that are required by x86-64-v4. Specifically they do not include
@@ -872,11 +872,12 @@ void CONTEXTToNativeContext(CONST CONTEXT *lpContext, native_context_t *native)
                 dest = FPREG_Xstate_Hi16Zmm(native, &size);
                 _ASSERT(size == (sizeof(M512) * 16));
                 memcpy_s(dest, sizeof(M512) * 16, &lpContext->Zmm16, sizeof(M512) * 16);
+
 #ifndef TARGET_OSX
                 // TODO-xarch-apx: I suppose OSX will not support APX.
                 if (FPREG_HasApxRegisters(native))
                 {
-                    _ASSERT((lpContext->XStateFeaturesMask & XSATE_MASK_APX) == XSATE_MASK_APX);
+                    _ASSERT((lpContext->XStateFeaturesMask & XSTATE_MASK_APX) == XSTATE_MASK_APX);
 
                     dest = FPREG_Xstate_Egpr(native, &size);
                     _ASSERT(size == (sizeof(DWORD64) * 16));
@@ -891,7 +892,7 @@ void CONTEXTToNativeContext(CONST CONTEXT *lpContext, native_context_t *native)
             //TODO-SVE: This only handles vector lengths of 128bits.
             if (CONTEXT_GetSveLengthFromOS() == 16)
             {
-                _ASSERT((lpContext->XStateFeaturesMask & XSTATE_MASK_SVE) == XSTATE_MASK_SVE);
+                _ASSERT((lpContext->XStateFeaturesMask & XSTATE_MASK_ARM64_SVE) == XSTATE_MASK_ARM64_SVE);
 
                 uint16_t vq = sve_vq_from_vl(lpContext->Vl);
 
@@ -1231,15 +1232,16 @@ void CONTEXTFromNativeContext(const native_context_t *native, LPCONTEXT lpContex
 
                 lpContext->XStateFeaturesMask |= XSTATE_MASK_AVX512;
             }
-
+#if !defined(TARGET_OSX)
             if (FPREG_HasApxRegisters(native))
             {
                 src = FPREG_Xstate_Egpr(native, &size);
                 _ASSERT(size == (sizeof(DWORD64) * 16));
                 memcpy_s(&lpContext->Egpr16, sizeof(DWORD64) * 16, src, sizeof(DWORD64) * 16);
 
-                lpContext->XStateFeaturesMask |= XSATE_MASK_APX;
+                lpContext->XStateFeaturesMask |= XSTATE_MASK_APX;
             }
+#endif // TARGET_OSX
         }
 #elif defined(HOST_ARM64)
         if (sve && sve->head.size >= SVE_SIG_CONTEXT_SIZE(sve_vq_from_vl(sve->vl)))
@@ -1252,7 +1254,7 @@ void CONTEXTFromNativeContext(const native_context_t *native, LPCONTEXT lpContex
 
                 uint16_t vq = sve_vq_from_vl(sve->vl);
 
-                lpContext->XStateFeaturesMask |= XSTATE_MASK_SVE;
+                lpContext->XStateFeaturesMask |= XSTATE_MASK_ARM64_SVE;
 
                 //Note: Size of ffr register is SVE_SIG_FFR_SIZE(vq) bytes.
                 lpContext->Ffr = *(WORD*) (((uint8_t*)sve) + SVE_SIG_FFR_OFFSET(vq));
@@ -1783,6 +1785,12 @@ CONTEXT_GetThreadContextFromThreadState(
 
                 // AMD64's FLOATING_POINT includes the xmm registers.
                 memcpy(&lpContext->Xmm0, &pState->__fpu_xmm0, 16 * 16);
+
+                if (threadStateFlavor == x86_FLOAT_STATE64)
+                {
+                     // There was just a floating point state, so make sure the CONTEXT_XSTATE is not set
+                     lpContext->ContextFlags &= ~(CONTEXT_XSTATE & CONTEXT_AREA_MASK);
+                }
             }
             break;
         }
@@ -1798,6 +1806,18 @@ CONTEXT_GetThreadContextFromThreadState(
         {
             x86_float_state_t *pState = (x86_float_state_t *)threadState;
             CONTEXT_GetThreadContextFromThreadState((thread_state_flavor_t)pState->fsh.flavor, (thread_state_t)&pState->ufs, lpContext);
+        }
+        break;
+        case x86_AVX_STATE:
+        {
+            x86_avx_state_t *pState = (x86_avx_state_t *)threadState;
+            CONTEXT_GetThreadContextFromThreadState((thread_state_flavor_t)pState->ash.flavor, (thread_state_t)&pState->ufs, lpContext);
+        }
+        break;
+        case x86_AVX512_STATE:
+        {
+            x86_avx512_state_t *pState = (x86_avx512_state_t *)threadState;
+            CONTEXT_GetThreadContextFromThreadState((thread_state_flavor_t)pState->ash.flavor, (thread_state_t)&pState->ufs, lpContext);
         }
         break;
 #elif defined(HOST_ARM64)
@@ -2139,12 +2159,12 @@ DBG_FlushInstructionCache(
     // As a workaround, we call __builtin___clear_cache on each page separately.
 
     const SIZE_T pageSize = GetVirtualPageSize();
-    INT_PTR begin = (INT_PTR)lpBaseAddress;
-    const INT_PTR end = begin + dwSize;
+    UINT_PTR begin = (UINT_PTR)lpBaseAddress;
+    const UINT_PTR end = begin + dwSize;
 
     while (begin < end)
     {
-        INT_PTR endOrNextPageBegin = ALIGN_UP(begin + 1, pageSize);
+        UINT_PTR endOrNextPageBegin = ALIGN_UP(begin + 1, pageSize);
         if (endOrNextPageBegin > end)
             endOrNextPageBegin = end;
 
@@ -2174,9 +2194,13 @@ CONTEXT& CONTEXT::operator=(const CONTEXT& ctx)
     size_t copySize;
     if (ctx.ContextFlags & CONTEXT_XSTATE & CONTEXT_AREA_MASK)
     {
-        if ((ctx.XStateFeaturesMask & XSTATE_MASK_AVX512) == XSTATE_MASK_AVX512)
+        if ((ctx.XStateFeaturesMask & XSTATE_MASK_APX) == XSTATE_MASK_APX)
         {
             copySize = sizeof(CONTEXT);
+        }
+        else if ((ctx.XStateFeaturesMask & XSTATE_MASK_AVX512) == XSTATE_MASK_AVX512)
+        {
+            copySize = offsetof(CONTEXT, Egpr16);
         }
         else
         {

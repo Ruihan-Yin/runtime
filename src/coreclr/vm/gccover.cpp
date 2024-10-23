@@ -1417,16 +1417,9 @@ BOOL OnGcCoverageInterrupt(PCONTEXT regs)
         RemoveGcCoverageInterrupt(instrPtr, savedInstrPtr, gcCover, offset);
         return TRUE;
     }
-
-    // If the thread is in preemptive mode then we must be in a
-    // PInvoke stub, a method that has an inline PInvoke frame,
-    // or be in a reverse PInvoke stub that's about to return.
-    //
-    // The PInvoke cases should should properly report GC refs if we
-    // trigger GC here. But a reverse PInvoke stub may over-report
-    // leading to spurious failures, as we would not normally report
-    // anything for this method at this point.
-    if (!pThread->PreemptiveGCDisabled() && pMD->HasUnmanagedCallersOnlyAttribute())
+    
+    // The thread is in preemptive mode. Normally, it should not be able to trigger GC.
+    if (!pThread->PreemptiveGCDisabled())
     {
         RemoveGcCoverageInterrupt(instrPtr, savedInstrPtr, gcCover, offset);
         return TRUE;
@@ -1841,7 +1834,7 @@ void DoGcStress (PCONTEXT regs, NativeCodeVersion nativeCodeVersion)
     // BUG(github #10318) - when not using allocation contexts, the alloc lock
     // must be acquired here. Until fixed, this assert prevents random heap corruption.
     assert(GCHeapUtilities::UseThreadAllocationContexts());
-    GCHeapUtilities::GetGCHeap()->StressHeap(&t_runtime_thread_locals.alloc_context);
+    GCHeapUtilities::GetGCHeap()->StressHeap(&t_runtime_thread_locals.alloc_context.m_GCAllocContext);
 
     // StressHeap can exit early w/o forcing a SuspendEE to trigger the instruction update
     // We can not rely on the return code to determine if the instruction update happened

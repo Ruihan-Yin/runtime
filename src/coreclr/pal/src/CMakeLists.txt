@@ -67,7 +67,7 @@ endif(CLR_CMAKE_USE_SYSTEM_LIBUNWIND)
 
 if(CLR_CMAKE_TARGET_OSX)
   add_definitions(-DTARGET_OSX)
-  if(CLR_CMAKE_TARGET_ARCH_AMD64)
+  if(CLR_CMAKE_HOST_ARCH_AMD64)
     add_definitions(-DXSTATE_SUPPORTED)
   endif()
   set(PLATFORM_SOURCES
@@ -149,8 +149,6 @@ set(SOURCES
   init/sxs.cpp
   loader/module.cpp
   locale/unicode.cpp
-  ${CLR_SRC_NATIVE_DIR}/minipal/utf8.c
-  ${CLR_SRC_NATIVE_DIR}/minipal/unicodedata.c
   map/common.cpp
   map/map.cpp
   map/virtual.cpp
@@ -337,6 +335,9 @@ if(CLR_CMAKE_TARGET_SUNOS)
     rt
   )
 endif(CLR_CMAKE_TARGET_SUNOS)
+
+target_link_libraries(coreclrpal
+  PRIVATE minipal)
 
 if(FEATURE_EVENT_TRACE)
   add_subdirectory(eventprovider)

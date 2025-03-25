@@ -2120,6 +2120,8 @@ void CodeGen::genEmitMachineCode()
                                      compiler->compHndBBtabCount, &prologSize, &epilogSize, codePtr, &codePtrRW,
                                      &coldCodePtr, &coldCodePtrRW, &consPtr, &consPtrRW DEBUGARG(&instrCount));
 
+    compiler->Metrics.InstructionCount = instrCount;
+
 #ifdef DEBUG
     assert(compiler->compCodeGenDone == false);
 

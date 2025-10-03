@@ -2163,11 +2163,6 @@ emitter::code_t emitter::AddEvexPrefix(const instrDesc* id, code_t code, emitAtt
             code |= EXTENDED_EVEX_PP_BITS;
         }
 
-        if (instrIsExtendedReg3opImul(ins))
-        {
-            // EVEX.R3
-            code &= 0xFF7FFFFFFFFFFFFFULL;
-        }
 #ifdef TARGET_AMD64
         if (IsCCMP(ins))
         {
@@ -2380,9 +2375,16 @@ emitter::code_t emitter::AddRex2Prefix(instruction ins, code_t code)
 {
     assert(IsRex2EncodableInstruction(ins));
 
+#ifdef TARGET_AMD64
+    if (ins >= INS_imul_08 && ins <= INS_imul_15)
+    {
+        // These instructions has built-in REX prefix, need to zero them out when adding prefix.
+        code &= 0xFFFFFFFFULL;
+    }
+#endif
+    
     // Note that there are cases that some register field might be filled before adding prefix,
     // So we don't check if the code has REX2 prefix already or not.
-
     code |= DEFAULT_2BYTE_REX2_PREFIX;
     if (IsLegacyMap1(code)) // 2-byte opcode on Map-1
     {
@@ -7180,6 +7182,12 @@ void emitter::emitIns_R_I(instruction         ins,
     {
         // ACC form is not promoted into EVEX space, need to emit with MI form.
         sz += 1;
+    }
+
+    if (ins == INS_test && reg == REG_EAX && TakesRex2Prefix(id))
+    {
+        // test ax will use ACC form, which is not REX2 compatiable.
+        sz -= 2;
     }
 #endif // TARGET_AMD64
 
@@ -17327,6 +17335,12 @@ BYTE* emitter::emitOutputRI(BYTE* dst, instrDesc* id)
             code = insCodeMI(ins);
             code = AddX86PrefixIfNeeded(id, code, size);
             code = insEncodeMIreg(id, reg, size, code);
+#ifdef TARGET_AMD64
+            if (ins >= INS_imul_08 && ins <= INS_imul_31)
+            {
+                insEncodeReg345(id, inst3opImulReg(ins), size, &code);
+            }
+#endif  // TARGET_AMD64
         }
     }
 

@@ -9317,64 +9317,54 @@ void CodeGen::genAmd64EmitterUnitTestsCFCMOV()
     emitter* theEmitter = GetEmitter();
     genDefineTempLabel(genCreateTempLabel());
 
-    // ============
-    // Test RR form
-    // ============
-
-    // Test all sizes
-    // theEmitter->emitIns_R_R(INS_cfcmove, EA_4BYTE, REG_RAX, REG_RCX, INS_OPTS_NONE);
-    // theEmitter->emitIns_R_R(INS_cfcmove, EA_8BYTE, REG_RAX, REG_RCX, INS_OPTS_NONE);
-    // theEmitter->emitIns_R_R(INS_cfcmove, EA_2BYTE, REG_RAX, REG_RCX, INS_OPTS_NONE);
-    // theEmitter->emitIns_R_R(INS_cfcmove, EA_1BYTE, REG_RAX, REG_RCX, INS_OPTS_NONE);
-
     GenTreePhysReg physReg(REG_EDX);
     physReg.SetRegNum(REG_EDX);
     GenTreeIndir load = indirForm(TYP_INT, &physReg);
 
     // Test all CC codes
-    // for (uint32_t ins = FIRST_CFCMOV_INSTRUCTION; ins <= LAST_CFCMOV_INSTRUCTION; ins++)
-    // {
-    //     theEmitter->emitIns_R_R((instruction)ins, EA_8BYTE, REG_RAX, REG_RCX, INS_OPTS_NONE);
-    //     theEmitter->emitIns_R_R((instruction)ins, EA_4BYTE, REG_RAX, REG_RCX, INS_OPTS_NONE);
-    //     theEmitter->emitIns_R_R((instruction)ins, EA_2BYTE, REG_RAX, REG_RCX, INS_OPTS_NONE);
+    for (uint32_t ins = FIRST_CFCMOV_INSTRUCTION; ins <= LAST_CFCMOV_INSTRUCTION; ins++)
+    {
+        theEmitter->emitIns_R_R((instruction)ins, EA_8BYTE, REG_RAX, REG_RCX, INS_OPTS_NONE);
+        theEmitter->emitIns_R_R((instruction)ins, EA_4BYTE, REG_RAX, REG_RCX, INS_OPTS_NONE);
+        theEmitter->emitIns_R_R((instruction)ins, EA_2BYTE, REG_RAX, REG_RCX, INS_OPTS_NONE);
 
-    //     theEmitter->emitIns_R_A((instruction)ins, EA_8BYTE, REG_EAX, &load, INS_OPTS_NONE);
-    //     theEmitter->emitIns_R_A((instruction)ins, EA_4BYTE, REG_EAX, &load, INS_OPTS_NONE);
-    //     theEmitter->emitIns_R_A((instruction)ins, EA_2BYTE, REG_EAX, &load, INS_OPTS_NONE);
+        theEmitter->emitIns_R_A((instruction)ins, EA_8BYTE, REG_EAX, &load, INS_OPTS_NONE);
+        theEmitter->emitIns_R_A((instruction)ins, EA_4BYTE, REG_EAX, &load, INS_OPTS_NONE);
+        theEmitter->emitIns_R_A((instruction)ins, EA_2BYTE, REG_EAX, &load, INS_OPTS_NONE);
 
-    //     theEmitter->emitIns_R_AR((instruction)ins, EA_8BYTE, REG_EAX, REG_ECX, 4);
-    //     theEmitter->emitIns_R_AR((instruction)ins, EA_4BYTE, REG_EAX, REG_ECX, 4);
-    //     theEmitter->emitIns_R_AR((instruction)ins, EA_2BYTE, REG_EAX, REG_ECX, 4);
+        theEmitter->emitIns_R_AR((instruction)ins, EA_8BYTE, REG_EAX, REG_ECX, 4);
+        theEmitter->emitIns_R_AR((instruction)ins, EA_4BYTE, REG_EAX, REG_ECX, 4);
+        theEmitter->emitIns_R_AR((instruction)ins, EA_2BYTE, REG_EAX, REG_ECX, 4);
 
-    //     theEmitter->emitIns_R_ARX((instruction)ins, EA_8BYTE, REG_R16, REG_R17, REG_R18, 1, 0);
-    //     theEmitter->emitIns_R_ARX((instruction)ins, EA_4BYTE, REG_R16, REG_R17, REG_R18, 1, 0);
-    //     theEmitter->emitIns_R_ARX((instruction)ins, EA_2BYTE, REG_R16, REG_R17, REG_R18, 1, 0);
-    //     theEmitter->emitIns_R_ARX((instruction)ins, EA_8BYTE, REG_R16, REG_R17, REG_R18, 2, 4);
-    //     theEmitter->emitIns_R_ARX((instruction)ins, EA_4BYTE, REG_R16, REG_R17, REG_R18, 2, 4);
-    //     theEmitter->emitIns_R_ARX((instruction)ins, EA_2BYTE, REG_R16, REG_R17, REG_R18, 2, 4);
+        theEmitter->emitIns_R_ARX((instruction)ins, EA_8BYTE, REG_R16, REG_R17, REG_R18, 1, 0);
+        theEmitter->emitIns_R_ARX((instruction)ins, EA_4BYTE, REG_R16, REG_R17, REG_R18, 1, 0);
+        theEmitter->emitIns_R_ARX((instruction)ins, EA_2BYTE, REG_R16, REG_R17, REG_R18, 1, 0);
+        theEmitter->emitIns_R_ARX((instruction)ins, EA_8BYTE, REG_R16, REG_R17, REG_R18, 2, 4);
+        theEmitter->emitIns_R_ARX((instruction)ins, EA_4BYTE, REG_R16, REG_R17, REG_R18, 2, 4);
+        theEmitter->emitIns_R_ARX((instruction)ins, EA_2BYTE, REG_R16, REG_R17, REG_R18, 2, 4);
 
-    //     theEmitter->emitIns_AR_R((instruction)ins, EA_2BYTE, REG_EAX, REG_ECX, 4, INS_OPTS_EVEX_nf);
-    //     theEmitter->emitIns_AR_R((instruction)ins, EA_4BYTE, REG_EAX, REG_ECX, 4, INS_OPTS_EVEX_nf);
-    //     theEmitter->emitIns_AR_R((instruction)ins, EA_8BYTE, REG_EAX, REG_ECX, 4, INS_OPTS_EVEX_nf);
+        theEmitter->emitIns_AR_R((instruction)ins, EA_2BYTE, REG_EAX, REG_ECX, 4, INS_OPTS_EVEX_nf);
+        theEmitter->emitIns_AR_R((instruction)ins, EA_4BYTE, REG_EAX, REG_ECX, 4, INS_OPTS_EVEX_nf);
+        theEmitter->emitIns_AR_R((instruction)ins, EA_8BYTE, REG_EAX, REG_ECX, 4, INS_OPTS_EVEX_nf);
 
-    //     theEmitter->emitIns_ARX_R((instruction)ins, EA_2BYTE, REG_R16, REG_R17, REG_R18, 2, 4, INS_OPTS_EVEX_nf);
-    //     theEmitter->emitIns_ARX_R((instruction)ins, EA_4BYTE, REG_R16, REG_R17, REG_R18, 2, 4, INS_OPTS_EVEX_nf);
-    //     theEmitter->emitIns_ARX_R((instruction)ins, EA_8BYTE, REG_R16, REG_R17, REG_R18, 2, 4, INS_OPTS_EVEX_nf);
+        theEmitter->emitIns_ARX_R((instruction)ins, EA_2BYTE, REG_R16, REG_R17, REG_R18, 2, 4, INS_OPTS_EVEX_nf);
+        theEmitter->emitIns_ARX_R((instruction)ins, EA_4BYTE, REG_R16, REG_R17, REG_R18, 2, 4, INS_OPTS_EVEX_nf);
+        theEmitter->emitIns_ARX_R((instruction)ins, EA_8BYTE, REG_R16, REG_R17, REG_R18, 2, 4, INS_OPTS_EVEX_nf);
 
-    //     theEmitter->emitIns_ARX_R((instruction)ins, EA_2BYTE, REG_R16, REG_R17, REG_NA, 2, 0, INS_OPTS_EVEX_nf);
-    //     theEmitter->emitIns_ARX_R((instruction)ins, EA_4BYTE, REG_R16, REG_R17, REG_NA, 2, 0, INS_OPTS_EVEX_nf);
-    //     theEmitter->emitIns_ARX_R((instruction)ins, EA_8BYTE, REG_R16, REG_R17, REG_NA, 2, 0, INS_OPTS_EVEX_nf);
+        theEmitter->emitIns_ARX_R((instruction)ins, EA_2BYTE, REG_R16, REG_R17, REG_NA, 2, 0, INS_OPTS_EVEX_nf);
+        theEmitter->emitIns_ARX_R((instruction)ins, EA_4BYTE, REG_R16, REG_R17, REG_NA, 2, 0, INS_OPTS_EVEX_nf);
+        theEmitter->emitIns_ARX_R((instruction)ins, EA_8BYTE, REG_R16, REG_R17, REG_NA, 2, 0, INS_OPTS_EVEX_nf);
 
-    //     theEmitter->emitIns_R_R_R((instruction)ins, EA_8BYTE, REG_R10, REG_EAX, REG_ECX, (insOpts)(INS_OPTS_EVEX_nd | INS_OPTS_EVEX_nf));
-    //     theEmitter->emitIns_R_R_R((instruction)ins, EA_4BYTE, REG_R10, REG_EAX, REG_ECX, (insOpts)(INS_OPTS_EVEX_nd | INS_OPTS_EVEX_nf));
-    //     theEmitter->emitIns_R_R_R((instruction)ins, EA_2BYTE, REG_R10, REG_EAX, REG_ECX, (insOpts)(INS_OPTS_EVEX_nd | INS_OPTS_EVEX_nf));
-    //     theEmitter->emitIns_R_R_AR((instruction)ins, EA_8BYTE, REG_R16, REG_R17, REG_R18, 2, (insOpts)(INS_OPTS_EVEX_nd | INS_OPTS_EVEX_nf));
-    //     theEmitter->emitIns_R_R_AR((instruction)ins, EA_4BYTE, REG_R16, REG_R17, REG_R18, 2, (insOpts)(INS_OPTS_EVEX_nd | INS_OPTS_EVEX_nf));
-    //     theEmitter->emitIns_R_R_AR((instruction)ins, EA_2BYTE, REG_R16, REG_R17, REG_R18, 2, (insOpts)(INS_OPTS_EVEX_nd | INS_OPTS_EVEX_nf));
-    //     theEmitter->emitIns_R_R_A((instruction)ins, EA_8BYTE, REG_R16, REG_R17, &load, (insOpts)(INS_OPTS_EVEX_nd | INS_OPTS_EVEX_nf));
-    //     theEmitter->emitIns_R_R_A((instruction)ins, EA_4BYTE, REG_R16, REG_R17, &load, (insOpts)(INS_OPTS_EVEX_nd | INS_OPTS_EVEX_nf));
-    //     theEmitter->emitIns_R_R_A((instruction)ins, EA_2BYTE, REG_R16, REG_R17, &load, (insOpts)(INS_OPTS_EVEX_nd | INS_OPTS_EVEX_nf));
-    // }
+        theEmitter->emitIns_R_R_R((instruction)ins, EA_8BYTE, REG_R10, REG_EAX, REG_ECX, (insOpts)(INS_OPTS_EVEX_nd | INS_OPTS_EVEX_nf));
+        theEmitter->emitIns_R_R_R((instruction)ins, EA_4BYTE, REG_R10, REG_EAX, REG_ECX, (insOpts)(INS_OPTS_EVEX_nd | INS_OPTS_EVEX_nf));
+        theEmitter->emitIns_R_R_R((instruction)ins, EA_2BYTE, REG_R10, REG_EAX, REG_ECX, (insOpts)(INS_OPTS_EVEX_nd | INS_OPTS_EVEX_nf));
+        theEmitter->emitIns_R_R_AR((instruction)ins, EA_8BYTE, REG_R16, REG_R17, REG_R18, 2, (insOpts)(INS_OPTS_EVEX_nd | INS_OPTS_EVEX_nf));
+        theEmitter->emitIns_R_R_AR((instruction)ins, EA_4BYTE, REG_R16, REG_R17, REG_R18, 2, (insOpts)(INS_OPTS_EVEX_nd | INS_OPTS_EVEX_nf));
+        theEmitter->emitIns_R_R_AR((instruction)ins, EA_2BYTE, REG_R16, REG_R17, REG_R18, 2, (insOpts)(INS_OPTS_EVEX_nd | INS_OPTS_EVEX_nf));
+        theEmitter->emitIns_R_R_A((instruction)ins, EA_8BYTE, REG_R16, REG_R17, &load, (insOpts)(INS_OPTS_EVEX_nd | INS_OPTS_EVEX_nf));
+        theEmitter->emitIns_R_R_A((instruction)ins, EA_4BYTE, REG_R16, REG_R17, &load, (insOpts)(INS_OPTS_EVEX_nd | INS_OPTS_EVEX_nf));
+        theEmitter->emitIns_R_R_A((instruction)ins, EA_2BYTE, REG_R16, REG_R17, &load, (insOpts)(INS_OPTS_EVEX_nd | INS_OPTS_EVEX_nf));
+    }
 
     // Test all CC codes
     for (uint32_t ins = INS_cmovo; ins <= INS_cmovg; ins++)
@@ -9389,27 +9379,6 @@ void CodeGen::genAmd64EmitterUnitTestsCFCMOV()
         theEmitter->emitIns_R_R_A((instruction)ins, EA_4BYTE, REG_R16, REG_R17, &load, (insOpts)(INS_OPTS_EVEX_nd));
         theEmitter->emitIns_R_R_A((instruction)ins, EA_2BYTE, REG_R16, REG_R17, &load, (insOpts)(INS_OPTS_EVEX_nd));
     }
-
-    // theEmitter->emitIns_R_R_R(INS_cfcmove, EA_8BYTE, REG_R10, REG_EAX, REG_ECX, (insOpts)(INS_OPTS_EVEX_nd | INS_OPTS_EVEX_nf));
-    // theEmitter->emitIns_R_R_R(INS_cfcmove, EA_4BYTE, REG_R10, REG_EAX, REG_ECX, (insOpts)(INS_OPTS_EVEX_nd | INS_OPTS_EVEX_nf));
-    // theEmitter->emitIns_R_R_R(INS_cfcmove, EA_2BYTE, REG_R10, REG_EAX, REG_ECX, (insOpts)(INS_OPTS_EVEX_nd | INS_OPTS_EVEX_nf));
-    // theEmitter->emitIns_R_R_AR(INS_cfcmove, EA_8BYTE, REG_R16, REG_R17, REG_R18, 2, (insOpts)(INS_OPTS_EVEX_nd | INS_OPTS_EVEX_nf));
-    // theEmitter->emitIns_R_R_AR(INS_cfcmove, EA_4BYTE, REG_R16, REG_R17, REG_R18, 2, (insOpts)(INS_OPTS_EVEX_nd | INS_OPTS_EVEX_nf));
-    // theEmitter->emitIns_R_R_AR(INS_cfcmove, EA_2BYTE, REG_R16, REG_R17, REG_R18, 2, (insOpts)(INS_OPTS_EVEX_nd | INS_OPTS_EVEX_nf));
-    // theEmitter->emitIns_R_R_A(INS_cfcmove, EA_8BYTE, REG_R16, REG_R17, &load, (insOpts)(INS_OPTS_EVEX_nd | INS_OPTS_EVEX_nf));
-    // theEmitter->emitIns_R_R_A(INS_cfcmove, EA_4BYTE, REG_R16, REG_R17, &load, (insOpts)(INS_OPTS_EVEX_nd | INS_OPTS_EVEX_nf));
-    // theEmitter->emitIns_R_R_A(INS_cfcmove, EA_2BYTE, REG_R16, REG_R17, &load, (insOpts)(INS_OPTS_EVEX_nd | INS_OPTS_EVEX_nf));
-
-    // theEmitter->emitIns_R_R_R(INS_cmove, EA_8BYTE, REG_R10, REG_EAX, REG_ECX, (insOpts)(INS_OPTS_EVEX_nd));
-    // theEmitter->emitIns_R_R_AR(INS_cmove, EA_8BYTE, REG_R16, REG_R17, REG_R18, 2, (insOpts)(INS_OPTS_EVEX_nd));
-    // theEmitter->emitIns_R_R_A(INS_cmove, EA_8BYTE, REG_R16, REG_R17, &load, (insOpts)(INS_OPTS_EVEX_nd));
-
-
-    // theEmitter->emitIns_AR(INS_cfcmove, EA_8BYTE, REG_EAX, 0, INS_OPTS_EVEX_nf);
-    // theEmitter->emitIns_ARX_R(INS_cfcmove, EA_2BYTE, REG_R16, REG_R17, REG_R18, 2, 4, INS_OPTS_EVEX_nf);
-    // theEmitter->emitIns_ARX_R(INS_cfcmove, EA_2BYTE, REG_R16, REG_R17, REG_NA, 2, 0, INS_OPTS_EVEX_nf);
-    // theEmitter->emitIns_R_A(INS_cfcmove, EA_4BYTE, REG_EAX, &load, INS_OPTS_NONE);
-    // theEmitter->emitIns_R_A(INS_cfcmove, EA_2BYTE, REG_EAX, &load, INS_OPTS_NONE);
 
 }
 
@@ -9433,62 +9402,62 @@ void CodeGen::genAmd64EmitterUnitTestsCCMP()
     theEmitter->emitIns_R_R(INS_ccmpe, EA_1BYTE, REG_RAX, REG_RCX, INS_OPTS_EVEX_dfv_cf);
 
     // Test all CC codes
-    // for (uint32_t ins = FIRST_CCMP_INSTRUCTION; ins <= LAST_CCMP_INSTRUCTION; ins++)
-    // {
-    //     theEmitter->emitIns_R_R((instruction)ins, EA_4BYTE, REG_RAX, REG_RCX, INS_OPTS_EVEX_dfv_cf);
-    // }
+    for (uint32_t ins = FIRST_CCMP_INSTRUCTION; ins <= LAST_CCMP_INSTRUCTION; ins++)
+    {
+        theEmitter->emitIns_R_R((instruction)ins, EA_4BYTE, REG_RAX, REG_RCX, INS_OPTS_EVEX_dfv_cf);
+    }
 
-    // // Test all dfv
-    // for (int i = 0; i < 16; i++)
-    // {
-    //     theEmitter->emitIns_R_R(INS_ccmpe, EA_4BYTE, REG_RAX, REG_RCX, (insOpts)(i << INS_OPTS_EVEX_dfv_byte_offset));
-    // }
+    // Test all dfv
+    for (int i = 0; i < 16; i++)
+    {
+        theEmitter->emitIns_R_R(INS_ccmpe, EA_4BYTE, REG_RAX, REG_RCX, (insOpts)(i << INS_OPTS_EVEX_dfv_byte_offset));
+    }
 
-    // // ============
-    // // Test RS form
-    // // ============
+    // ============
+    // Test RS form
+    // ============
 
-    // // Test all sizes
-    // theEmitter->emitIns_R_S(INS_ccmpe, EA_4BYTE, REG_RAX, 0, 0, INS_OPTS_EVEX_dfv_cf);
-    // theEmitter->emitIns_R_S(INS_ccmpe, EA_8BYTE, REG_RAX, 0, 0, INS_OPTS_EVEX_dfv_cf);
-    // theEmitter->emitIns_R_S(INS_ccmpe, EA_2BYTE, REG_RAX, 0, 0, INS_OPTS_EVEX_dfv_cf);
-    // theEmitter->emitIns_R_S(INS_ccmpe, EA_1BYTE, REG_RAX, 0, 0, INS_OPTS_EVEX_dfv_cf);
+    // Test all sizes
+    theEmitter->emitIns_R_S(INS_ccmpe, EA_4BYTE, REG_RAX, 0, 0, INS_OPTS_EVEX_dfv_cf);
+    theEmitter->emitIns_R_S(INS_ccmpe, EA_8BYTE, REG_RAX, 0, 0, INS_OPTS_EVEX_dfv_cf);
+    theEmitter->emitIns_R_S(INS_ccmpe, EA_2BYTE, REG_RAX, 0, 0, INS_OPTS_EVEX_dfv_cf);
+    theEmitter->emitIns_R_S(INS_ccmpe, EA_1BYTE, REG_RAX, 0, 0, INS_OPTS_EVEX_dfv_cf);
 
-    // // Test all CC codes
-    // for (uint32_t ins = FIRST_CCMP_INSTRUCTION; ins <= LAST_CCMP_INSTRUCTION; ins++)
-    // {
-    //     theEmitter->emitIns_R_S((instruction)ins, EA_4BYTE, REG_RAX, 0, 0, INS_OPTS_EVEX_dfv_cf);
-    // }
+    // Test all CC codes
+    for (uint32_t ins = FIRST_CCMP_INSTRUCTION; ins <= LAST_CCMP_INSTRUCTION; ins++)
+    {
+        theEmitter->emitIns_R_S((instruction)ins, EA_4BYTE, REG_RAX, 0, 0, INS_OPTS_EVEX_dfv_cf);
+    }
 
-    // // Test all dfv
-    // for (int i = 0; i < 16; i++)
-    // {
-    //     theEmitter->emitIns_R_S(INS_ccmpe, EA_4BYTE, REG_RAX, 0, 0, (insOpts)(i << INS_OPTS_EVEX_dfv_byte_offset));
-    // }
+    // Test all dfv
+    for (int i = 0; i < 16; i++)
+    {
+        theEmitter->emitIns_R_S(INS_ccmpe, EA_4BYTE, REG_RAX, 0, 0, (insOpts)(i << INS_OPTS_EVEX_dfv_byte_offset));
+    }
 
-    // // ============
-    // // Test RI form (test small and large sizes and constants)
-    // // ============
+    // ============
+    // Test RI form (test small and large sizes and constants)
+    // ============
 
-    // theEmitter->emitIns_R_I(INS_ccmpe, EA_4BYTE, REG_RAX, 123, INS_OPTS_EVEX_dfv_cf);
-    // theEmitter->emitIns_R_I(INS_ccmpe, EA_4BYTE, REG_RAX, 270, INS_OPTS_EVEX_dfv_cf);
+    theEmitter->emitIns_R_I(INS_ccmpe, EA_4BYTE, REG_RAX, 123, INS_OPTS_EVEX_dfv_cf);
+    theEmitter->emitIns_R_I(INS_ccmpe, EA_4BYTE, REG_RAX, 270, INS_OPTS_EVEX_dfv_cf);
 
-    // theEmitter->emitIns_R_I(INS_ccmpe, EA_8BYTE, REG_RAX, 123, INS_OPTS_EVEX_dfv_cf);
-    // theEmitter->emitIns_R_I(INS_ccmpe, EA_8BYTE, REG_RAX, 270, INS_OPTS_EVEX_dfv_cf);
+    theEmitter->emitIns_R_I(INS_ccmpe, EA_8BYTE, REG_RAX, 123, INS_OPTS_EVEX_dfv_cf);
+    theEmitter->emitIns_R_I(INS_ccmpe, EA_8BYTE, REG_RAX, 270, INS_OPTS_EVEX_dfv_cf);
 
-    // theEmitter->emitIns_R_I(INS_ccmpe, EA_2BYTE, REG_RAX, 123, INS_OPTS_EVEX_dfv_cf);
-    // theEmitter->emitIns_R_I(INS_ccmpe, EA_2BYTE, REG_RAX, 270, INS_OPTS_EVEX_dfv_cf);
+    theEmitter->emitIns_R_I(INS_ccmpe, EA_2BYTE, REG_RAX, 123, INS_OPTS_EVEX_dfv_cf);
+    theEmitter->emitIns_R_I(INS_ccmpe, EA_2BYTE, REG_RAX, 270, INS_OPTS_EVEX_dfv_cf);
 
-    // theEmitter->emitIns_R_I(INS_ccmpe, EA_1BYTE, REG_RAX, 123, INS_OPTS_EVEX_dfv_cf);
-    // theEmitter->emitIns_R_I(INS_ccmpe, EA_1BYTE, REG_RAX, 270, INS_OPTS_EVEX_dfv_cf);
+    theEmitter->emitIns_R_I(INS_ccmpe, EA_1BYTE, REG_RAX, 123, INS_OPTS_EVEX_dfv_cf);
+    theEmitter->emitIns_R_I(INS_ccmpe, EA_1BYTE, REG_RAX, 270, INS_OPTS_EVEX_dfv_cf);
 
-    // // ============
-    // // Test RC form
-    // // ============
+    // ============
+    // Test RC form
+    // ============
 
-    // CORINFO_FIELD_HANDLE hnd = theEmitter->emitFltOrDblConst(1.0f, EA_4BYTE);
-    // theEmitter->emitIns_R_C(INS_ccmpe, EA_4BYTE, REG_RAX, hnd, 0, INS_OPTS_EVEX_dfv_cf);
-    // theEmitter->emitIns_R_C(INS_ccmpe, EA_4BYTE, REG_RAX, hnd, 4, INS_OPTS_EVEX_dfv_cf);
+    CORINFO_FIELD_HANDLE hnd = theEmitter->emitFltOrDblConst(1.0f, EA_4BYTE);
+    theEmitter->emitIns_R_C(INS_ccmpe, EA_4BYTE, REG_RAX, hnd, 0, INS_OPTS_EVEX_dfv_cf);
+    theEmitter->emitIns_R_C(INS_ccmpe, EA_4BYTE, REG_RAX, hnd, 4, INS_OPTS_EVEX_dfv_cf);
 }
 
 #endif // defined(DEBUG) && defined(TARGET_AMD64)

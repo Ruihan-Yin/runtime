@@ -659,7 +659,7 @@ void SetEvexDFVIfNeeded(instrDesc* id, insOpts instOptions)
     if ((instOptions & INS_OPTS_EVEX_dfv_MASK) != 0)
     {
         assert(UsePromotedEVEXEncoding());
-        assert(IsCCMP(id->idIns()));
+        assert(IsCCMP(id->idIns())/* || IsCFCMOV(id->idIns())*/);
         id->idSetEvexDFV(instOptions);
     }
 #endif
@@ -777,8 +777,10 @@ static bool IsRexW1Instruction(instruction ins);
 static bool IsRexWXInstruction(instruction ins);
 static bool IsRexW1EvexInstruction(instruction ins);
 
+static bool  IsCCIns(instruction ins);
 static bool  IsCCMP(instruction ins);
-static insCC GetCCFromCCMP(instruction ins);
+static bool  IsCFCMOV(instruction ins);
+static insCC GetCCFromIns(instruction ins);
 
 bool isAvx512Blendv(instruction ins)
 {
@@ -967,7 +969,13 @@ void emitIns_R_R_A(instruction   ins,
                    GenTreeIndir* indir,
                    insOpts       instOptions = INS_OPTS_NONE);
 
-void emitIns_R_R_AR(instruction ins, emitAttr attr, regNumber reg1, regNumber reg2, regNumber base, int offs);
+void emitIns_R_R_AR(instruction ins,
+                    emitAttr attr,
+                    regNumber reg1,
+                    regNumber reg2,
+                    regNumber base,
+                    int offs,
+                    insOpts       instOptions = INS_OPTS_NONE);
 
 void emitIns_R_AR_R(instruction ins,
                     emitAttr    attr,

@@ -626,6 +626,8 @@ protected:
     void genAmd64EmitterUnitTestsApx();
     void genAmd64EmitterUnitTestsAvx10v2();
     void genAmd64EmitterUnitTestsCCMP();
+    void genAmd64EmitterUnitTestsCFCMOV();
+    void genAmd64EmitterUnitTestsCTEST();
 #endif
 
 #endif // defined(DEBUG)

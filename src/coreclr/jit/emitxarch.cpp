@@ -942,59 +942,106 @@ bool emitter::DoJitUseApxNDD(instruction ins) const
 #endif
 }
 
+inline bool emitter::IsCCIns(instruction ins)
+{
+    return (IsCCMP(ins) || IsCFCMOV(ins) || IsCTEST(ins));
+}
+
 inline bool emitter::IsCCMP(instruction ins)
 {
     return (ins >= FIRST_CCMP_INSTRUCTION && ins <= LAST_CCMP_INSTRUCTION);
 }
 
+inline bool emitter::IsCTEST(instruction ins)
+{
+    return (ins >= FIRST_CTEST_INSTRUCTION && ins <= LAST_CTEST_INSTRUCTION);
+}
+
+inline bool emitter::IsCFCMOV(instruction ins)
+{
+    return (ins >= FIRST_CFCMOV_INSTRUCTION && ins <= LAST_CFCMOV_INSTRUCTION);
+}
+
 //------------------------------------------------------------------------
-// GetCCFromCCMP: Get a condition code from a ccmp instruction
+// GetCCFromIns: Get a condition code from a conditional instruction
 //
 // Arguments:
 //    ins - The instruction to check.
 //
 // Returns:
-//    `insCC` representing the condition code for a ccmp instruction.
-//    ccmpx instructions share the same instruction encoding unlike
+//    `insCC` representing the condition code for a ccmp / cfcmov instruction.
+//    ccmpx / cfcmovx instructions share the same instruction encoding unlike
 //    other x86 status bit instructions and instead have a CC coded into
 //    the EVEX prefix.
 //
-inline insCC emitter::GetCCFromCCMP(instruction ins)
+inline insCC emitter::GetCCFromIns(instruction ins)
 {
-    assert(IsCCMP(ins));
+    assert(IsCCMP(ins) || IsCTEST(ins));
     switch (ins)
     {
         case INS_ccmpo:
+        case INS_cfcmovo:
+        case INS_ctesto:
             return INS_CC_O;
         case INS_ccmpno:
+        case INS_cfcmovno:
+        case INS_ctestno:
             return INS_CC_NO;
         case INS_ccmpb:
+        case INS_cfcmovb:
+        case INS_ctestb:
             return INS_CC_B;
         case INS_ccmpae:
+        case INS_cfcmovae:
+        case INS_ctestae:
             return INS_CC_AE;
         case INS_ccmpe:
+        case INS_cfcmove:
+        case INS_cteste:
             return INS_CC_E;
         case INS_ccmpne:
+        case INS_cfcmovne:
+        case INS_ctestne:
             return INS_CC_NE;
         case INS_ccmpbe:
+        case INS_cfcmovbe:
+        case INS_ctestbe:
             return INS_CC_BE;
         case INS_ccmpa:
+        case INS_cfcmova:
+        case INS_ctesta:
             return INS_CC_A;
         case INS_ccmps:
+        case INS_cfcmovs:
+        case INS_ctests:
             return INS_CC_S;
         case INS_ccmpns:
+        case INS_cfcmovns:
+        case INS_ctestns:
             return INS_CC_NS;
         case INS_ccmpt:
+        case INS_cfcmovp:
+        case INS_ctestt:
             return INS_CC_TRUE;
         case INS_ccmpf:
+        case INS_cfcmovnp:
+        case INS_ctestf:
             return INS_CC_FALSE;
         case INS_ccmpl:
+        case INS_cfcmovl:
+        case INS_ctestl:
             return INS_CC_L;
         case INS_ccmpge:
+        case INS_cfcmovge:
+        case INS_ctestge:
             return INS_CC_GE;
         case INS_ccmple:
+        case INS_cfcmovle:
+        case INS_ctestle:
             return INS_CC_LE;
         case INS_ccmpg:
+        case INS_cfcmovg:
+        case INS_ctestg:
             return INS_CC_G;
         default:
             unreached();
@@ -2137,7 +2184,7 @@ emitter::code_t emitter::AddEvexPrefix(const instrDesc* id, code_t code, emitAtt
     {
         if (!IsEvexEncodableInstruction(ins))
         {
-            // Legacy-promoted insutrcions are not labeled with Encoding_EVEX.
+            // Legacy-promoted instructions are not labeled with Encoding_EVEX.
             code |= MAP4_IN_BYTE_EVEX_PREFIX;
         }
 
@@ -2165,11 +2212,11 @@ emitter::code_t emitter::AddEvexPrefix(const instrDesc* id, code_t code, emitAtt
         }
 
 #ifdef TARGET_AMD64
-        if (IsCCMP(ins))
+        if (IsCCMP(ins) || IsCTEST(ins))
         {
             code &= 0xFFFF87F0FFFFFFFF;
             code |= ((size_t)id->idGetEvexDFV()) << 43;
-            code |= ((size_t)GetCCFromCCMP(ins)) << 32;
+            code |= ((size_t)GetCCFromIns(ins)) << 32;
         }
 #endif
 
@@ -2281,7 +2328,7 @@ emitter::code_t emitter::AddEvexPrefix(const instrDesc* id, code_t code, emitAtt
         default:
         {
 #ifdef TARGET_AMD64
-            if (IsCCMP(id->idIns())) // Special case for conditional ins such as CCMP, CCMOV
+            if (IsCCMP(id->idIns()) || IsCTEST(id->idIns()))
             {
                 break;
             }
@@ -5403,7 +5450,9 @@ UNATIVE_OFFSET emitter::emitInsSizeAM(instrDesc* id, code_t code)
                // kmov instructions reach this path with EA_8BYTE size, even on x86
                || IsKMOVInstruction(ins)
                // The prefetch instructions are always 3 bytes and have part of their modr/m byte hardcoded
-               || isPrefetch(ins));
+               || isPrefetch(ins)
+               // cmov intructions reach this path with EA_2BYTE
+               || insIsCMOV(ins));
 
         size = (attrSize == EA_2BYTE) && (ins == INS_cmpxchg) ? 4 : 3;
     }
@@ -7046,7 +7095,7 @@ void emitter::emitIns_R_I(instruction         ins,
     UNATIVE_OFFSET sz;
     instrDesc*     id;
     insFormat      fmt       = emitInsModeFormat(ins, IF_RRD_CNS);
-    bool           valInByte = ((signed char)val == (target_ssize_t)val) && (ins != INS_mov) && (ins != INS_test);
+    bool           valInByte = ((signed char)val == (target_ssize_t)val) && (ins != INS_mov) && (ins != INS_test) && !IsCTEST(ins);
 
     // BT reg,imm might be useful but it requires special handling of the immediate value
     // (it is always encoded in a byte). Let's not complicate things until this is needed.
@@ -8268,8 +8317,8 @@ void emitter::emitIns_R_S_I(
 void emitter::emitIns_R_R_A(
     instruction ins, emitAttr attr, regNumber reg1, regNumber reg2, GenTreeIndir* indir, insOpts instOptions)
 {
-    assert(IsSimdInstruction(ins));
-    assert(IsThreeOperandAVXInstruction(ins));
+    assert(IsSimdInstruction(ins) || IsApxExtendedEvexInstruction(ins));
+    assert(IsThreeOperandAVXInstruction(ins) || IsApxExtendedEvexInstruction(ins));
 
     ssize_t    offs = indir->Offset();
     instrDesc* id   = emitNewInstrAmd(attr, offs);
@@ -8282,6 +8331,8 @@ void emitter::emitIns_R_R_A(
 
     SetEvexBroadcastIfNeeded(id, instOptions);
     SetEvexEmbMaskIfNeeded(id, instOptions);
+    SetEvexNdIfNeeded(id, instOptions);
+    SetEvexNfIfNeeded(id, instOptions);
 
     UNATIVE_OFFSET sz = emitInsSizeAM(id, insCodeRM(ins));
     id->idCodeSize(sz);
@@ -8290,10 +8341,14 @@ void emitter::emitIns_R_R_A(
     emitCurIGsize += sz;
 }
 
-void emitter::emitIns_R_R_AR(instruction ins, emitAttr attr, regNumber reg1, regNumber reg2, regNumber base, int offs)
+void emitter::emitIns_R_R_AR
+    (instruction ins, emitAttr attr, regNumber reg1, regNumber reg2, regNumber base, int offs, insOpts instOptions)
 {
-    assert(IsSimdInstruction(ins));
-    assert(IsThreeOperandAVXInstruction(ins));
+    assert(IsSimdInstruction(ins) || IsApxExtendedEvexInstruction(ins));
+    assert(IsThreeOperandAVXInstruction(ins) || IsApxExtendedEvexInstruction(ins));
+
+    // Checking EVEX.ND and NDD compatibility together in case the ND slot is overridden by other features.
+    bool useNDD = ((instOptions & INS_OPTS_EVEX_nd_MASK) != 0) && IsApxNddEncodableInstruction(ins);
 
     instrDesc* id = emitNewInstrAmd(attr, offs);
 
@@ -8304,6 +8359,9 @@ void emitter::emitIns_R_R_AR(instruction ins, emitAttr attr, regNumber reg1, reg
     id->idInsFmt(emitInsModeFormat(ins, IF_RRD_RRD_ARD));
     id->idAddr()->iiaAddrMode.amBaseReg = base;
     id->idAddr()->iiaAddrMode.amIndxReg = REG_NA;
+
+    SetEvexNdIfNeeded(id, instOptions);
+    SetEvexNfIfNeeded(id, instOptions);
 
     UNATIVE_OFFSET sz = emitInsSizeAM(id, insCodeRM(ins));
     id->idCodeSize(sz);
@@ -8981,7 +9039,7 @@ void emitter::emitIns_C_R(instruction ins, emitAttr attr, CORINFO_FIELD_HANDLE f
  *  Add an instruction with a static member + constant.
  */
 
-void emitter::emitIns_C_I(instruction ins, emitAttr attr, CORINFO_FIELD_HANDLE fldHnd, int offs, int val)
+void emitter::emitIns_C_I(instruction ins, emitAttr attr, CORINFO_FIELD_HANDLE fldHnd, int offs, int val, insOpts instOptions)
 {
     // Static always need relocs
     if (!jitStaticFldIsGlobAddr(fldHnd))
@@ -9180,7 +9238,8 @@ void emitter::emitIns_I_AR(instruction ins, emitAttr attr, int val, regNumber re
     }
     */
 
-    UNATIVE_OFFSET sz;
+    emitAttr size = EA_SIZE(attr);
+    UNATIVE_OFFSET sz = 0;
     instrDesc*     id = emitNewInstrAmdCns(attr, disp, val);
     id->idIns(ins);
     id->idInsFmt(fmt);
@@ -9194,8 +9253,25 @@ void emitter::emitIns_I_AR(instruction ins, emitAttr attr, int val, regNumber re
 
     assert(emitGetInsAmdAny(id) == disp); // make sure "disp" is stored properly
 
-    sz = emitInsSizeAM(id, insCodeMI(ins), val);
+    if (IsCTEST(ins))
+    {
+        sz = 1;
+        if (size > EA_1BYTE)
+        {
+            sz += 1;
+        }
+        if (size > EA_2BYTE)
+        {
+            sz += 2;
+        }
+    }
+
+    sz += emitInsSizeAM(id, insCodeMI(ins), val);
+    
     id->idCodeSize(sz);
+
+    SetEvexNfIfNeeded(id, instOptions);
+    SetEvexDFVIfNeeded(id, instOptions);
 
     dispIns(id);
     emitCurIGsize += sz;
@@ -9614,6 +9690,7 @@ void emitter::emitIns_ARX_R(instruction    ins,
 
     id->idIns(ins);
     id->idInsFmt(fmt);
+    SetEvexNfIfNeeded(id, instOptions);
 
     id->idAddr()->iiaAddrMode.amBaseReg = base;
     id->idAddr()->iiaAddrMode.amIndxReg = index;
@@ -9622,6 +9699,9 @@ void emitter::emitIns_ARX_R(instruction    ins,
     {
         id->idSetNoApxEvexPromotion();
     }
+
+    SetEvexNfIfNeeded(id, instOptions);
+    SetEvexDFVIfNeeded(id, instOptions);
 
     assert(emitGetInsAmdAny(id) == disp); // make sure "disp" is stored properly
 
@@ -12808,7 +12888,7 @@ void emitter::emitDispIns(
     printf(" %-9s", sstr);
 
 #ifdef TARGET_AMD64
-    if (IsCCMP(id->idIns()))
+    if (IsCCMP(id->idIns()) || IsCTEST(id->idIns()))
     {
         // print finite set notation for DFV
         unsigned dfv        = id->idGetEvexDFV();
@@ -14371,6 +14451,18 @@ BYTE* emitter::emitOutputAM(BYTE* dst, instrDesc* id, code_t code, CnsVal* addc)
             }
 
             opsz = 1;
+            if (IsCTEST(ins) && size > EA_1BYTE)
+            {
+                if (size > EA_1BYTE)
+                {
+                    opsz += 1;
+                }
+                if (size > EA_2BYTE)
+                {
+                    opsz += 2;
+                }
+                // opsz += 3;
+            }
         }
     }
 #ifdef TARGET_X86
@@ -14599,7 +14691,7 @@ BYTE* emitter::emitOutputAM(BYTE* dst, instrDesc* id, code_t code, CnsVal* addc)
             code += 4;
         }
     }
-    else if (!IsSSEInstruction(ins) && !IsVexOrEvexEncodableInstruction(ins))
+    else if (!IsSSEInstruction(ins) && !IsVexOrEvexEncodableInstruction(ins) && !IsCFCMOV(ins))
     {
         /* Is the operand size larger than a byte? */
 
@@ -16720,7 +16812,7 @@ BYTE* emitter::emitOutputRR(BYTE* dst, instrDesc* id)
     }
     else if ((ins == INS_movsx) || (ins == INS_movzx) || (insIsCMOV(ins)))
     {
-        assert(hasCodeRM(ins) && !hasCodeMI(ins) && !hasCodeMR(ins));
+        assert(hasCodeRM(ins) && !hasCodeMI(ins) && (!hasCodeMR(ins)));
         code = insCodeRM(ins);
         code = AddX86PrefixIfNeeded(id, code, size);
         code = insEncodeRMreg(id, code) | (int)(size == EA_2BYTE);
@@ -16814,7 +16906,7 @@ BYTE* emitter::emitOutputRR(BYTE* dst, instrDesc* id)
         code = AddX86PrefixIfNeeded(id, code, size);
         code = insEncodeMRreg(id, code);
 
-        if (ins != INS_test && !IsShiftInstruction(ins))
+        if (ins != INS_test && !IsShiftInstruction(ins) && !IsCFCMOV(ins) && !IsCTEST(ins))
         {
             code |= 2;
         }
@@ -16839,7 +16931,8 @@ BYTE* emitter::emitOutputRR(BYTE* dst, instrDesc* id)
                     dst += emitOutputByte(dst, 0x66);
                 }
 
-                code |= 0x1;
+                if (!IsCFCMOV(ins))
+                    code |= 0x1;
                 break;
 
             case EA_4BYTE:
@@ -16853,7 +16946,8 @@ BYTE* emitter::emitOutputRR(BYTE* dst, instrDesc* id)
                     assert((code & EXTENDED_EVEX_PP_BITS) == 0);
                 }
 #endif
-                code |= 0x1;
+                if (!IsCFCMOV(ins))
+                    code |= 0x1;
                 break;
 
 #ifdef TARGET_AMD64
@@ -16870,7 +16964,8 @@ BYTE* emitter::emitOutputRR(BYTE* dst, instrDesc* id)
                 }
 
                 // Set the 'w' bit to get the large version
-                code |= 0x1;
+                if (!IsCFCMOV(ins))
+                    code |= 0x1;
                 break;
 
 #endif // TARGET_AMD64
@@ -16912,7 +17007,8 @@ BYTE* emitter::emitOutputRR(BYTE* dst, instrDesc* id)
     }
 
 #ifdef TARGET_AMD64
-    if (TakesSimdPrefix(id) && !IsCCMP(ins))
+    // ToDo: Handle CFCMOV 3 operand instruction properly
+    if (TakesSimdPrefix(id) && !IsCCIns(ins))
 #else
     if (TakesSimdPrefix(id))
 #endif
@@ -17066,7 +17162,7 @@ BYTE* emitter::emitOutputRRR(BYTE* dst, instrDesc* id)
             case EA_2BYTE:
             case EA_4BYTE:
                 // Set the 'w' bit to get the large version
-                code = insIsCMOV(ins) ? code : (code | (0x01));
+                code = (insIsCMOV(ins) || IsCFCMOV(ins)) ? code : (code | (0x01));
                 break;
 
 #ifdef TARGET_AMD64
@@ -17076,7 +17172,7 @@ BYTE* emitter::emitOutputRRR(BYTE* dst, instrDesc* id)
                 code = AddRexWPrefix(id, code); // TODO-APX : Revisit. does xor or other cases need to be handled
                                                 // differently? see emitOutputRR
                 // Set the 'w' bit to get the large version
-                code = insIsCMOV(ins) ? code : (code | (0x01));
+                code = (insIsCMOV(ins) || IsCFCMOV(ins)) ? code : (code | (0x01));
                 break;
 
 #endif // TARGET_AMD64
@@ -17178,7 +17274,7 @@ BYTE* emitter::emitOutputRI(BYTE* dst, instrDesc* id)
     instruction ins       = id->idIns();
     regNumber   reg       = id->idReg1();
     ssize_t     val       = emitGetInsSC(id);
-    bool        valInByte = ((signed char)val == (target_ssize_t)val) && (ins != INS_mov) && (ins != INS_test);
+    bool        valInByte = ((signed char)val == (target_ssize_t)val) && (ins != INS_mov) && (ins != INS_test) && !IsCTEST(ins);
 
     assert(!id->idHasReg2());
 
@@ -20461,6 +20557,38 @@ emitter::insExecutionCharacteristics emitter::getInsExecutionCharacteristics(ins
         case INS_ccmpge:
         case INS_ccmple:
         case INS_ccmpg:
+        case INS_ctesto:
+        case INS_ctestno:
+        case INS_ctestb:
+        case INS_ctestae:
+        case INS_cteste:
+        case INS_ctestne:
+        case INS_ctestbe:
+        case INS_ctesta:
+        case INS_ctests:
+        case INS_ctestns:
+        case INS_ctestt:
+        case INS_ctestf:
+        case INS_ctestl:
+        case INS_ctestge:
+        case INS_ctestle:
+        case INS_ctestg:
+        case INS_cfcmovo:
+        case INS_cfcmovno:
+        case INS_cfcmovb:
+        case INS_cfcmovae:
+        case INS_cfcmove:
+        case INS_cfcmovne:
+        case INS_cfcmovbe:
+        case INS_cfcmova:
+        case INS_cfcmovs:
+        case INS_cfcmovns:
+        case INS_cfcmovp:
+        case INS_cfcmovnp:
+        case INS_cfcmovl:
+        case INS_cfcmovge:
+        case INS_cfcmovle:
+        case INS_cfcmovg:
 #endif
         {
 
@@ -20487,7 +20615,7 @@ emitter::insExecutionCharacteristics emitter::getInsExecutionCharacteristics(ins
             else // writes
             {
                 assert(memAccessKind == PERFSCORE_MEMORY_WRITE);
-                assert(ins == INS_mov);
+                // assert(ins == INS_mov);
                 result.insThroughput = PERFSCORE_THROUGHPUT_1C;
             }
             break;

@@ -972,7 +972,7 @@ inline bool emitter::IsCFCMOV(instruction ins)
 //
 inline insCC emitter::GetCCFromIns(instruction ins)
 {
-    assert(IsCCMP(ins)/* || IsCFCMOV(ins)*/);
+    assert(IsCCMP(ins));
     switch (ins)
     {
         case INS_ccmpo:
@@ -2203,12 +2203,6 @@ emitter::code_t emitter::AddEvexPrefix(const instrDesc* id, code_t code, emitAtt
             code |= ((size_t)id->idGetEvexDFV()) << 43;
             code |= ((size_t)GetCCFromIns(ins)) << 32;
         }
-        else if (IsCFCMOV(ins))
-        {
-            // code &= 0xFFFF87F0FFFFFFFF;
-            // code |= ((size_t)id->idGetEvexDFV()) << 43;
-            // code |= ((size_t)GetCCFromIns(ins)) << 32;
-        }
 #endif
 
         return code;
@@ -2319,7 +2313,7 @@ emitter::code_t emitter::AddEvexPrefix(const instrDesc* id, code_t code, emitAtt
         default:
         {
 #ifdef TARGET_AMD64
-            if (IsCCMP(id->idIns())/* || IsCFCMOV(id->idIns())*/) // Special case for conditional ins such as CCMP, CCMOV
+            if (IsCCMP(id->idIns()))
             {
                 break;
             }
@@ -12845,11 +12839,6 @@ void emitter::emitDispIns(
     /* Display the instruction name */
 
 #ifdef TARGET_AMD64
-    if (IsApxNddEncodableInstruction(id->idIns()) && id->idIsEvexNdContextSet())
-    {
-        // print the EVEX.ND indication in pseudo prefix style
-        printf("{nd}    ");
-    }
     if (IsApxNfEncodableInstruction(id->idIns()) && id->idIsEvexNfContextSet())
     {
         // print the EVEX.NF indication in psudeo prefix style.
@@ -12861,7 +12850,7 @@ void emitter::emitDispIns(
     printf(" %-9s", sstr);
 
 #ifdef TARGET_AMD64
-    if (IsCCMP(id->idIns())/* || IsCFCMOV(id->idIns())*/)
+    if (IsCCMP(id->idIns()))
     {
         // print finite set notation for DFV
         unsigned dfv        = id->idGetEvexDFV();

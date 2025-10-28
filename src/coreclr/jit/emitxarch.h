@@ -659,7 +659,7 @@ void SetEvexDFVIfNeeded(instrDesc* id, insOpts instOptions)
     if ((instOptions & INS_OPTS_EVEX_dfv_MASK) != 0)
     {
         assert(UsePromotedEVEXEncoding());
-        assert(IsCCMP(id->idIns())/* || IsCFCMOV(id->idIns())*/);
+        assert(IsCCMP(id->idIns()));
         id->idSetEvexDFV(instOptions);
     }
 #endif

@@ -659,7 +659,7 @@ void SetEvexDFVIfNeeded(instrDesc* id, insOpts instOptions)
     if ((instOptions & INS_OPTS_EVEX_dfv_MASK) != 0)
     {
         assert(UsePromotedEVEXEncoding());
-        assert(IsCCMP(id->idIns()));
+        assert(IsCCMP(id->idIns()) || IsCTEST(id->idIns()));
         id->idSetEvexDFV(instOptions);
     }
 #endif
@@ -779,6 +779,7 @@ static bool IsRexW1EvexInstruction(instruction ins);
 
 static bool  IsCCIns(instruction ins);
 static bool  IsCCMP(instruction ins);
+static bool  IsCTEST(instruction ins);
 static bool  IsCFCMOV(instruction ins);
 static insCC GetCCFromIns(instruction ins);
 
@@ -1103,7 +1104,7 @@ void emitIns_R_C(instruction          ins,
 
 void emitIns_C_R(instruction ins, emitAttr attr, CORINFO_FIELD_HANDLE fldHnd, regNumber reg, int offs);
 
-void emitIns_C_I(instruction ins, emitAttr attr, CORINFO_FIELD_HANDLE fdlHnd, int offs, int val);
+void emitIns_C_I(instruction ins, emitAttr attr, CORINFO_FIELD_HANDLE fdlHnd, int offs, int val, insOpts instOptions = INS_OPTS_NONE);
 
 void emitIns_IJ(emitAttr attr, regNumber reg, unsigned base);
 

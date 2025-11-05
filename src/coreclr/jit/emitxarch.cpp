@@ -945,12 +945,17 @@ bool emitter::DoJitUseApxNDD(instruction ins) const
 
 inline bool emitter::IsCCIns(instruction ins)
 {
-    return (IsCCMP(ins) || IsCFCMOV(ins));
+    return (IsCCMP(ins) || IsCFCMOV(ins) || IsCTEST(ins));
 }
 
 inline bool emitter::IsCCMP(instruction ins)
 {
     return (ins >= FIRST_CCMP_INSTRUCTION && ins <= LAST_CCMP_INSTRUCTION);
+}
+
+inline bool emitter::IsCTEST(instruction ins)
+{
+    return (ins >= FIRST_CTEST_INSTRUCTION && ins <= LAST_CTEST_INSTRUCTION);
 }
 
 inline bool emitter::IsCFCMOV(instruction ins)
@@ -972,56 +977,72 @@ inline bool emitter::IsCFCMOV(instruction ins)
 //
 inline insCC emitter::GetCCFromIns(instruction ins)
 {
-    assert(IsCCMP(ins));
+    assert(IsCCMP(ins) || IsCTEST(ins));
     switch (ins)
     {
         case INS_ccmpo:
         case INS_cfcmovo:
+        case INS_ctesto:
             return INS_CC_O;
         case INS_ccmpno:
         case INS_cfcmovno:
+        case INS_ctestno:
             return INS_CC_NO;
         case INS_ccmpb:
         case INS_cfcmovb:
+        case INS_ctestb:
             return INS_CC_B;
         case INS_ccmpae:
         case INS_cfcmovae:
+        case INS_ctestae:
             return INS_CC_AE;
         case INS_ccmpe:
         case INS_cfcmove:
+        case INS_cteste:
             return INS_CC_E;
         case INS_ccmpne:
         case INS_cfcmovne:
+        case INS_ctestne:
             return INS_CC_NE;
         case INS_ccmpbe:
         case INS_cfcmovbe:
+        case INS_ctestbe:
             return INS_CC_BE;
         case INS_ccmpa:
         case INS_cfcmova:
+        case INS_ctesta:
             return INS_CC_A;
         case INS_ccmps:
         case INS_cfcmovs:
+        case INS_ctests:
             return INS_CC_S;
         case INS_ccmpns:
         case INS_cfcmovns:
+        case INS_ctestns:
             return INS_CC_NS;
         case INS_ccmpt:
         case INS_cfcmovp:
+        case INS_ctestt:
             return INS_CC_TRUE;
         case INS_ccmpf:
         case INS_cfcmovnp:
+        case INS_ctestf:
             return INS_CC_FALSE;
         case INS_ccmpl:
         case INS_cfcmovl:
+        case INS_ctestl:
             return INS_CC_L;
         case INS_ccmpge:
         case INS_cfcmovge:
+        case INS_ctestge:
             return INS_CC_GE;
         case INS_ccmple:
         case INS_cfcmovle:
+        case INS_ctestle:
             return INS_CC_LE;
         case INS_ccmpg:
         case INS_cfcmovg:
+        case INS_ctestg:
             return INS_CC_G;
         default:
             unreached();
@@ -2197,7 +2218,7 @@ emitter::code_t emitter::AddEvexPrefix(const instrDesc* id, code_t code, emitAtt
             code &= 0xFF7FFFFFFFFFFFFFULL;
         }
 #ifdef TARGET_AMD64
-        if (IsCCMP(ins))
+        if (IsCCMP(ins) || IsCTEST(ins))
         {
             code &= 0xFFFF87F0FFFFFFFF;
             code |= ((size_t)id->idGetEvexDFV()) << 43;
@@ -2313,7 +2334,7 @@ emitter::code_t emitter::AddEvexPrefix(const instrDesc* id, code_t code, emitAtt
         default:
         {
 #ifdef TARGET_AMD64
-            if (IsCCMP(id->idIns()))
+            if (IsCCMP(id->idIns()) || IsCTEST(id->idIns()))
             {
                 break;
             }
@@ -7073,7 +7094,7 @@ void emitter::emitIns_R_I(instruction         ins,
     UNATIVE_OFFSET sz;
     instrDesc*     id;
     insFormat      fmt       = emitInsModeFormat(ins, IF_RRD_CNS);
-    bool           valInByte = ((signed char)val == (target_ssize_t)val) && (ins != INS_mov) && (ins != INS_test);
+    bool           valInByte = ((signed char)val == (target_ssize_t)val) && (ins != INS_mov) && (ins != INS_test) && !IsCTEST(ins);
 
     // BT reg,imm might be useful but it requires special handling of the immediate value
     // (it is always encoded in a byte). Let's not complicate things until this is needed.
@@ -9018,7 +9039,7 @@ void emitter::emitIns_C_R(instruction ins, emitAttr attr, CORINFO_FIELD_HANDLE f
  *  Add an instruction with a static member + constant.
  */
 
-void emitter::emitIns_C_I(instruction ins, emitAttr attr, CORINFO_FIELD_HANDLE fldHnd, int offs, int val)
+void emitter::emitIns_C_I(instruction ins, emitAttr attr, CORINFO_FIELD_HANDLE fldHnd, int offs, int val, insOpts instOptions)
 {
     // Static always need relocs
     if (!jitStaticFldIsGlobAddr(fldHnd))
@@ -12850,7 +12871,7 @@ void emitter::emitDispIns(
     printf(" %-9s", sstr);
 
 #ifdef TARGET_AMD64
-    if (IsCCMP(id->idIns()))
+    if (IsCCMP(id->idIns()) || IsCTEST(id->idIns()))
     {
         // print finite set notation for DFV
         unsigned dfv        = id->idGetEvexDFV();
@@ -16845,7 +16866,7 @@ BYTE* emitter::emitOutputRR(BYTE* dst, instrDesc* id)
         code = AddX86PrefixIfNeeded(id, code, size);
         code = insEncodeMRreg(id, code);
 
-        if (ins != INS_test && !IsShiftInstruction(ins) && !IsCFCMOV(ins))
+        if (ins != INS_test && !IsShiftInstruction(ins) && !IsCFCMOV(ins) && !IsCTEST(ins))
         {
             code |= 2;
         }
@@ -17213,7 +17234,7 @@ BYTE* emitter::emitOutputRI(BYTE* dst, instrDesc* id)
     instruction ins       = id->idIns();
     regNumber   reg       = id->idReg1();
     ssize_t     val       = emitGetInsSC(id);
-    bool        valInByte = ((signed char)val == (target_ssize_t)val) && (ins != INS_mov) && (ins != INS_test);
+    bool        valInByte = ((signed char)val == (target_ssize_t)val) && (ins != INS_mov) && (ins != INS_test) && !IsCTEST(ins);
 
     assert(!id->idHasReg2());
 
@@ -20490,6 +20511,22 @@ emitter::insExecutionCharacteristics emitter::getInsExecutionCharacteristics(ins
         case INS_ccmpge:
         case INS_ccmple:
         case INS_ccmpg:
+        case INS_ctesto:
+        case INS_ctestno:
+        case INS_ctestb:
+        case INS_ctestae:
+        case INS_cteste:
+        case INS_ctestne:
+        case INS_ctestbe:
+        case INS_ctesta:
+        case INS_ctests:
+        case INS_ctestns:
+        case INS_ctestt:
+        case INS_ctestf:
+        case INS_ctestl:
+        case INS_ctestge:
+        case INS_ctestle:
+        case INS_ctestg:
         case INS_cfcmovo:
         case INS_cfcmovno:
         case INS_cfcmovb:

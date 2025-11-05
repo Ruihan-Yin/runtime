@@ -1185,6 +1185,24 @@ INST3(cfcmovge,         "cfcmovge",         IUM_WR, 0x00004D,    BAD_CODE,    0x
 INST3(cfcmovle,         "cfcmovle",         IUM_WR, 0x00004E,    BAD_CODE,    0x00004E,                                  ILLEGAL,           ILLEGAL,    INS_TT_NONE,    Reads_OF | Reads_SF | Reads_ZF | INS_Flags_Has_NDD | INS_Flags_Has_NF)
 INST3(cfcmovg,          "cfcmovg",          IUM_WR, 0x00004F,    BAD_CODE,    0x00004F,                                  ILLEGAL,           ILLEGAL,    INS_TT_NONE,    Reads_OF | Reads_SF | Reads_ZF | INS_Flags_Has_NDD | INS_Flags_Has_NF)
 #define LAST_CFCMOV_INSTRUCTION INS_cfcmovg
+#define FIRST_CTEST_INSTRUCTION INS_ctesto
+INST3(ctesto,            "ctesto",            IUM_RD, 0x000084,    0x00008F6,   BAD_CODE,                                  ILLEGAL,           ILLEGAL,    INS_TT_NONE,    Writes_OF | Writes_SF | Writes_ZF | Writes_CF | INS_FLAGS_Has_Sbit)
+INST3(ctestno,           "ctestno",           IUM_RD, 0x000084,    0x00000F6,   BAD_CODE,                                  ILLEGAL,           ILLEGAL,    INS_TT_NONE,    Writes_OF | Writes_SF | Writes_ZF | Writes_CF | INS_FLAGS_Has_Sbit)
+INST3(ctestb,            "ctestb",            IUM_RD, 0x000084,    0x00000F6,   BAD_CODE,                                  ILLEGAL,           ILLEGAL,    INS_TT_NONE,    Writes_OF | Writes_SF | Writes_ZF | Writes_CF | INS_FLAGS_Has_Sbit)
+INST3(ctestae,           "ctestae",           IUM_RD, 0x000084,    0x00000F6,   BAD_CODE,                                  ILLEGAL,           ILLEGAL,    INS_TT_NONE,    Writes_OF | Writes_SF | Writes_ZF | Writes_CF | INS_FLAGS_Has_Sbit)
+INST3(cteste,            "cteste",            IUM_RD, 0x000084,    0x00000F6,   BAD_CODE,                                  ILLEGAL,           ILLEGAL,    INS_TT_NONE,    Writes_OF | Writes_SF | Writes_ZF | Writes_CF | INS_FLAGS_Has_Sbit)
+INST3(ctestne,           "ctestne",           IUM_RD, 0x000084,    0x00000F6,   BAD_CODE,                                  ILLEGAL,           ILLEGAL,    INS_TT_NONE,    Writes_OF | Writes_SF | Writes_ZF | Writes_CF | INS_FLAGS_Has_Sbit)
+INST3(ctestbe,           "ctestbe",           IUM_RD, 0x000084,    0x00000F6,   BAD_CODE,                                  ILLEGAL,           ILLEGAL,    INS_TT_NONE,    Writes_OF | Writes_SF | Writes_ZF | Writes_CF | INS_FLAGS_Has_Sbit)
+INST3(ctesta,            "ctesta",            IUM_RD, 0x000084,    0x00000F6,   BAD_CODE,                                  ILLEGAL,           ILLEGAL,    INS_TT_NONE,    Writes_OF | Writes_SF | Writes_ZF | Writes_CF | INS_FLAGS_Has_Sbit)
+INST3(ctests,            "ctests",            IUM_RD, 0x000084,    0x00000F6,   BAD_CODE,                                  ILLEGAL,           ILLEGAL,    INS_TT_NONE,    Writes_OF | Writes_SF | Writes_ZF | Writes_CF | INS_FLAGS_Has_Sbit)
+INST3(ctestns,           "ctestns",           IUM_RD, 0x000084,    0x00000F6,   BAD_CODE,                                  ILLEGAL,           ILLEGAL,    INS_TT_NONE,    Writes_OF | Writes_SF | Writes_ZF | Writes_CF | INS_FLAGS_Has_Sbit)
+INST3(ctestt,            "ctestt",            IUM_RD, 0x000084,    0x00000F6,   BAD_CODE,                                  ILLEGAL,           ILLEGAL,    INS_TT_NONE,    Writes_OF | Writes_SF | Writes_ZF | Writes_CF | INS_FLAGS_Has_Sbit)
+INST3(ctestf,            "ctestf",            IUM_RD, 0x000084,    0x00000F6,   BAD_CODE,                                  ILLEGAL,           ILLEGAL,    INS_TT_NONE,    Writes_OF | Writes_SF | Writes_ZF | Writes_CF | INS_FLAGS_Has_Sbit)
+INST3(ctestl,            "ctestl",            IUM_RD, 0x000084,    0x00000F6,   BAD_CODE,                                  ILLEGAL,           ILLEGAL,    INS_TT_NONE,    Writes_OF | Writes_SF | Writes_ZF | Writes_CF | INS_FLAGS_Has_Sbit)
+INST3(ctestge,           "ctestge",           IUM_RD, 0x000084,    0x00000F6,   BAD_CODE,                                  ILLEGAL,           ILLEGAL,    INS_TT_NONE,    Writes_OF | Writes_SF | Writes_ZF | Writes_CF | INS_FLAGS_Has_Sbit)
+INST3(ctestle,           "ctestle",           IUM_RD, 0x000084,    0x00000F6,   BAD_CODE,                                  ILLEGAL,           ILLEGAL,    INS_TT_NONE,    Writes_OF | Writes_SF | Writes_ZF | Writes_CF | INS_FLAGS_Has_Sbit)
+INST3(ctestg,            "ctestg",            IUM_RD, 0x000084,    0x00000F6,   BAD_CODE,                                  ILLEGAL,           ILLEGAL,    INS_TT_NONE,    Writes_OF | Writes_SF | Writes_ZF | Writes_CF | INS_FLAGS_Has_Sbit)
+#define LAST_CTEST_INSTRUCTION INS_ctestg
 INST3(crc32_apx,        "crc32",            IUM_RW, BAD_CODE,     BAD_CODE,     0x0000F0,                                3C,                1C,         INS_TT_NONE,    INS_FLAGS_None)
 INST3(movbe_apx,        "movbe",            IUM_WR, 0x000061,     BAD_CODE,     0x000060,                                ILLEGAL,           ILLEGAL,    INS_TT_NONE,    INS_FLAGS_None)
 

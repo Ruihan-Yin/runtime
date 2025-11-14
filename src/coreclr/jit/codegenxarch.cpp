@@ -9398,6 +9398,12 @@ void CodeGen::genAmd64EmitterUnitTestsApx()
     theEmitter->emitIns_Mov(INS_movd32, EA_4BYTE, REG_R16, REG_XMM16, false);
 
     theEmitter->emitIns_R(INS_seto_apx, EA_1BYTE, REG_R11, INS_OPTS_EVEX_zu);
+    theEmitter->emitIns_I_AR(INS_imul_09, EA_4BYTE, 0x8149a, REG_EAX, 0x14);
+    theEmitter->emitIns_I_AR(INS_imul_19, EA_4BYTE, 0x8149a, REG_EAX, 0x14);
+    theEmitter->emitIns_I_AR(INS_imul_19, EA_4BYTE, 0x8149a, REG_R16, 0x14);
+    theEmitter->emitIns_S_I(INS_imul_19, EA_4BYTE, 0, 20, 30);
+    theEmitter->emitIns_S_I(INS_imul_09, EA_4BYTE, 0, 20, 30);
+    theEmitter->emitIns_R_AR(INS_crc32_apx, EA_4BYTE, REG_R17, REG_EAX, 0x14);
 }
 
 void CodeGen::genAmd64EmitterUnitTestsAvx10v2()

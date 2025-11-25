@@ -9467,6 +9467,9 @@ void CodeGen::genAmd64EmitterUnitTestsCTEST()
 {
     emitter* theEmitter = GetEmitter();
     genDefineTempLabel(genCreateTempLabel());
+    GenTreePhysReg physReg(REG_EDX);
+    physReg.SetRegNum(REG_EDX);
+    GenTreeIndir load = indirForm(TYP_INT, &physReg);
 
     // ============
     // Test RR form
@@ -9495,27 +9498,42 @@ void CodeGen::genAmd64EmitterUnitTestsCTEST()
     // Test RI form (test small and large sizes and constants)
     // ============
 
-    theEmitter->emitIns_R_I(INS_cteste, EA_4BYTE, REG_RAX, 123, INS_OPTS_EVEX_dfv_cf);
-    theEmitter->emitIns_R_I(INS_cteste, EA_4BYTE, REG_RAX, 270, INS_OPTS_EVEX_dfv_cf);
-
+    theEmitter->emitIns_R_I(INS_test, EA_8BYTE, REG_RAX, 123);
     theEmitter->emitIns_R_I(INS_cteste, EA_8BYTE, REG_RAX, 123, INS_OPTS_EVEX_dfv_cf);
     theEmitter->emitIns_R_I(INS_cteste, EA_8BYTE, REG_RAX, 270, INS_OPTS_EVEX_dfv_cf);
 
+    theEmitter->emitIns_R_I(INS_test, EA_4BYTE, REG_RAX, 123);
+    theEmitter->emitIns_R_I(INS_cteste, EA_4BYTE, REG_RAX, 123, INS_OPTS_EVEX_dfv_cf);
+    theEmitter->emitIns_R_I(INS_cteste, EA_4BYTE, REG_RAX, 270, INS_OPTS_EVEX_dfv_cf);
+
+    theEmitter->emitIns_R_I(INS_test, EA_2BYTE, REG_RAX, 123);
     theEmitter->emitIns_R_I(INS_cteste, EA_2BYTE, REG_RAX, 123, INS_OPTS_EVEX_dfv_cf);
     theEmitter->emitIns_R_I(INS_cteste, EA_2BYTE, REG_RAX, 270, INS_OPTS_EVEX_dfv_cf);
 
+    theEmitter->emitIns_R_I(INS_test, EA_1BYTE, REG_RAX, 123);
     theEmitter->emitIns_R_I(INS_cteste, EA_1BYTE, REG_RAX, 123, INS_OPTS_EVEX_dfv_cf);
     theEmitter->emitIns_R_I(INS_cteste, EA_1BYTE, REG_RAX, 270, INS_OPTS_EVEX_dfv_cf);
 
+
     // ============
-    // Test RC form
+    // Test MR form (test small and large sizes)
+    // ============
+
+    theEmitter->emitIns_AR_R(INS_cteste, EA_1BYTE, REG_EAX, REG_ECX, 4, INS_OPTS_EVEX_dfv_cf);
+    theEmitter->emitIns_AR_R(INS_cteste, EA_2BYTE, REG_EAX, REG_ECX, 4, INS_OPTS_EVEX_dfv_cf);
+    theEmitter->emitIns_AR_R(INS_cteste, EA_4BYTE, REG_EAX, REG_ECX, 4, INS_OPTS_EVEX_dfv_cf);
+    theEmitter->emitIns_AR_R(INS_cteste, EA_8BYTE, REG_EAX, REG_ECX, 4, INS_OPTS_EVEX_dfv_cf);
+
+    // ============
+    // Test MI form
     // TBD: APX NCI - fix emitter for these instruction formats
     // ============
 
-    // CORINFO_FIELD_HANDLE hnd = theEmitter->emitFltOrDblConst(1.0f, EA_4BYTE);
-    // theEmitter->emitIns_C_I(INS_cteste, EA_4BYTE, hnd, 0x04, 123, INS_OPTS_EVEX_dfv_cf);
-    // theEmitter->emitIns_C_I(INS_cteste, EA_4BYTE, hnd, 0x04, 123, INS_OPTS_EVEX_dfv_cf);
-    // theEmitter->emitIns_C_I(INS_cteste, EA_4BYTE, hnd, 0x04, 270, INS_OPTS_EVEX_dfv_cf);
+    CORINFO_FIELD_HANDLE hnd = theEmitter->emitFltOrDblConst(1.0f, EA_4BYTE);
+    theEmitter->emitIns_I_AR(INS_cteste, EA_1BYTE, 123, REG_R18, 2, INS_OPTS_EVEX_dfv_cf);
+    theEmitter->emitIns_I_AR(INS_cteste, EA_2BYTE, 123, REG_R18, 2, INS_OPTS_EVEX_dfv_cf);
+    theEmitter->emitIns_I_AR(INS_cteste, EA_4BYTE, 123, REG_R18, 2, INS_OPTS_EVEX_dfv_cf);
+    theEmitter->emitIns_I_AR(INS_cteste, EA_8BYTE, 123, REG_R18, 2, INS_OPTS_EVEX_dfv_cf);
 }
 #endif // defined(DEBUG) && defined(TARGET_AMD64)
 

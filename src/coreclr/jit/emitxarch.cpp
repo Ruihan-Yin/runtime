@@ -9238,7 +9238,8 @@ void emitter::emitIns_I_AR(instruction ins, emitAttr attr, int val, regNumber re
     }
     */
 
-    UNATIVE_OFFSET sz;
+    emitAttr size = EA_SIZE(attr);
+    UNATIVE_OFFSET sz = 0;
     instrDesc*     id = emitNewInstrAmdCns(attr, disp, val);
     id->idIns(ins);
     id->idInsFmt(fmt);
@@ -9252,8 +9253,25 @@ void emitter::emitIns_I_AR(instruction ins, emitAttr attr, int val, regNumber re
 
     assert(emitGetInsAmdAny(id) == disp); // make sure "disp" is stored properly
 
-    sz = emitInsSizeAM(id, insCodeMI(ins), val);
+    if (IsCTEST(ins))
+    {
+        sz = 1;
+        if (size > EA_1BYTE)
+        {
+            sz += 1;
+        }
+        if (size > EA_2BYTE)
+        {
+            sz += 2;
+        }
+    }
+
+    sz += emitInsSizeAM(id, insCodeMI(ins), val);
+    
     id->idCodeSize(sz);
+
+    SetEvexNfIfNeeded(id, instOptions);
+    SetEvexDFVIfNeeded(id, instOptions);
 
     dispIns(id);
     emitCurIGsize += sz;
@@ -9681,6 +9699,9 @@ void emitter::emitIns_ARX_R(instruction    ins,
     {
         id->idSetNoApxEvexPromotion();
     }
+
+    SetEvexNfIfNeeded(id, instOptions);
+    SetEvexDFVIfNeeded(id, instOptions);
 
     assert(emitGetInsAmdAny(id) == disp); // make sure "disp" is stored properly
 
@@ -14434,6 +14455,18 @@ BYTE* emitter::emitOutputAM(BYTE* dst, instrDesc* id, code_t code, CnsVal* addc)
             }
 
             opsz = 1;
+            if (IsCTEST(ins) && size > EA_1BYTE)
+            {
+                if (size > EA_1BYTE)
+                {
+                    opsz += 1;
+                }
+                if (size > EA_2BYTE)
+                {
+                    opsz += 2;
+                }
+                // opsz += 3;
+            }
         }
     }
 #ifdef TARGET_X86

@@ -297,7 +297,7 @@ GenTree* Lowering::LowerBinaryArithmetic(GenTreeOp* binOp)
     ContainCheckBinary(binOp);
 
 #ifdef TARGET_AMD64
-    if (JitConfig.EnableApxConditionalChaining())
+    if (comp->canUseApxEvexEncoding() && JitConfig.EnableApxConditionalChaining())
     {
         if (binOp->OperIs(GT_AND, GT_OR))
         {

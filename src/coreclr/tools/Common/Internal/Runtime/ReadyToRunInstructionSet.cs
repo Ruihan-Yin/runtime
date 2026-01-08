@@ -58,7 +58,7 @@ namespace Internal.ReadyToRunConstants
         Avx10v1=44,
         Avx10v1_V512=46,
         Evex=47,
-        Apx=48,
+        Apx_F=48,
         Pclmulqdq_V256=49,
         Pclmulqdq_V512=50,
         Avx10v2=51,
@@ -95,6 +95,7 @@ namespace Internal.ReadyToRunConstants
         Avx512Vpopcntdq=82,
         Avx512Vpopcntdq_VL=83,
         Zbs=84,
+        Apx_NCI_NDD_NF=85,
 
     }
 }

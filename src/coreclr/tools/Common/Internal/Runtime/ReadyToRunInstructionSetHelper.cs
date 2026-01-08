@@ -88,7 +88,8 @@ namespace Internal.ReadyToRunConstants
                             case InstructionSet.X64_AVX10v1_X64: return ReadyToRunInstructionSet.Avx512Bf16;
                             case InstructionSet.X64_AVX10v2: return ReadyToRunInstructionSet.Avx10v2;
                             case InstructionSet.X64_AVX10v2_X64: return ReadyToRunInstructionSet.Avx10v2;
-                            case InstructionSet.X64_APX: return ReadyToRunInstructionSet.Apx;
+                            case InstructionSet.X64_APX_F: return ReadyToRunInstructionSet.Apx_F;
+                            case InstructionSet.X64_APX_NCI_NDD_NF: return ReadyToRunInstructionSet.Apx_NCI_NDD_NF;
                             case InstructionSet.X64_AES: return ReadyToRunInstructionSet.Aes;
                             case InstructionSet.X64_AES_X64: return ReadyToRunInstructionSet.Aes;
                             case InstructionSet.X64_AES_V256: return ReadyToRunInstructionSet.Aes_V256;
@@ -142,7 +143,8 @@ namespace Internal.ReadyToRunConstants
                             case InstructionSet.X86_AVX10v1_X64: return null;
                             case InstructionSet.X86_AVX10v2: return ReadyToRunInstructionSet.Avx10v2;
                             case InstructionSet.X86_AVX10v2_X64: return null;
-                            case InstructionSet.X86_APX: return ReadyToRunInstructionSet.Apx;
+                            case InstructionSet.X86_APX_F: return ReadyToRunInstructionSet.Apx_F;
+                            case InstructionSet.X86_APX_NCI_NDD_NF: return ReadyToRunInstructionSet.Apx_NCI_NDD_NF;
                             case InstructionSet.X86_AES: return ReadyToRunInstructionSet.Aes;
                             case InstructionSet.X86_AES_X64: return null;
                             case InstructionSet.X86_AES_V256: return ReadyToRunInstructionSet.Aes_V256;

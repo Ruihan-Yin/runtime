@@ -19,7 +19,7 @@
 #define XArchIntrinsicConstants_Avx512v3 (1 << 4)
 #define XArchIntrinsicConstants_Avx10v1 (1 << 5)
 #define XArchIntrinsicConstants_Avx10v2 (1 << 6)
-#define XArchIntrinsicConstants_Apx (1 << 7)
+#define XArchIntrinsicConstants_Apx_F (1 << 7)
 #define XArchIntrinsicConstants_Aes (1 << 8)
 #define XArchIntrinsicConstants_Avx512Vp2intersect (1 << 9)
 #define XArchIntrinsicConstants_AvxIfma (1 << 10)
@@ -30,6 +30,7 @@
 #define XArchIntrinsicConstants_Vaes (1 << 15)
 #define XArchIntrinsicConstants_WaitPkg (1 << 16)
 #define XArchIntrinsicConstants_X86Serialize (1 << 17)
+#define XArchIntrinsicConstants_Apx_NCI_NDD_NF (1 << 18)
 #endif // HOST_X86 || HOST_AMD64
 
 #if defined(HOST_ARM64)

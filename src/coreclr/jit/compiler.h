@@ -9720,7 +9720,7 @@ public:
     //
     bool canUseApxEncoding() const
     {
-        return compOpportunisticallyDependsOn(InstructionSet_APX);
+        return compOpportunisticallyDependsOn(InstructionSet_APX_F);
     }
 
     //------------------------------------------------------------------------
@@ -9734,6 +9734,16 @@ public:
         return canUseApxEncoding() && canUseEvexEncoding();
     }
 
+    //------------------------------------------------------------------------
+    // canUseApxNewInstructions - Answer the question: Are APX NCI NDD NF instruction can be used.
+    //
+    // Returns:
+    //    `true` if NCI NDD NF instructions are supported, `false` if not.
+    //
+    bool canUseApxNewInstructions() const
+    {
+        return canUseApxEncoding() && compOpportunisticallyDependsOn(InstructionSet_APX_NCI_NDD_NF);
+    }
 private:
     //------------------------------------------------------------------------
     // DoJitStressEvexEncoding- Answer the question: Do we force EVEX encoding.
@@ -9761,7 +9771,7 @@ private:
     bool DoJitStressRex2Encoding() const
     {
 #ifdef DEBUG
-        if (JitConfig.JitStressRex2Encoding() && compOpportunisticallyDependsOn(InstructionSet_APX))
+        if (JitConfig.JitStressRex2Encoding() && compOpportunisticallyDependsOn(InstructionSet_APX_F))
         {
             // we should make sure EVEX is also stressed when REX2 is stressed, as we will need to guarantee EGPR
             // functionality is properly turned on for every instructions when REX2 is stress.
@@ -9795,7 +9805,7 @@ private:
     bool DoJitStressPromotedEvexEncoding() const
     {
 #ifdef DEBUG
-        if (JitConfig.JitStressPromotedEvexEncoding() && compOpportunisticallyDependsOn(InstructionSet_APX))
+        if (JitConfig.JitStressPromotedEvexEncoding() && compOpportunisticallyDependsOn(InstructionSet_APX_F))
         {
             return true;
         }

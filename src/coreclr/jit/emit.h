@@ -512,6 +512,7 @@ public:
         SetUseEvexEncoding(false);
         SetUseRex2Encoding(false);
         SetUsePromotedEVEXEncoding(false);
+        SetUseApxNewInstructions(false);
 #endif // TARGET_XARCH
 
         emitDataSecCur = nullptr;

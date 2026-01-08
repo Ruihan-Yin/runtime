@@ -1262,9 +1262,13 @@ void EEJitManager::SetCpuInfo()
     }
 
 #if defined(TARGET_AMD64)
-    if (((cpuFeatures & XArchIntrinsicConstants_Apx) != 0) && CLRConfig::GetConfigValue(CLRConfig::EXTERNAL_EnableAPX))
+    if (((cpuFeatures & XArchIntrinsicConstants_Apx_F) != 0) && CLRConfig::GetConfigValue(CLRConfig::EXTERNAL_EnableAPX))
     {
-        CPUCompileFlags.Set(InstructionSet_APX);
+        CPUCompileFlags.Set(InstructionSet_APX_F);
+    }
+    if (((cpuFeatures & XArchIntrinsicConstants_Apx_NCI_NDD_NF) != 0) && CLRConfig::GetConfigValue(CLRConfig::EXTERNAL_EnableAPX))
+    {
+        CPUCompileFlags.Set(InstructionSet_APX_NCI_NDD_NF);
     }
 #endif  // TARGET_AMD64
 

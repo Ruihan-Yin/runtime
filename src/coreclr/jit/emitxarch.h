@@ -358,6 +358,18 @@ void SetUsePromotedEVEXEncoding(bool value)
     usePromotedEVEXEncodings = value;
 }
 
+// Are new APX instructions encoding supported.
+bool useApxNewInstructions;
+bool UseApxNewInstructions() const
+{
+    return useApxNewInstructions;
+}
+
+void SetUseApxNewInstructions(bool value)
+{
+    useApxNewInstructions = value;
+}
+
 //------------------------------------------------------------------------
 // UseSimdEncoding: Returns true if either VEX or EVEX encoding is supported
 // contains Evex prefix.
@@ -572,7 +584,7 @@ void SetEvexNdIfNeeded(instrDesc* id, insOpts instOptions)
 {
     if ((instOptions & INS_OPTS_EVEX_nd_MASK) != 0)
     {
-        assert(UsePromotedEVEXEncoding());
+        assert(UseApxNewInstructions());
         assert(IsApxNddEncodableInstruction(id->idIns()));
         id->idSetEvexNdContext();
     }
@@ -593,7 +605,7 @@ void SetEvexNfIfNeeded(instrDesc* id, insOpts instOptions)
 {
     if ((instOptions & INS_OPTS_EVEX_nf_MASK) != 0)
     {
-        assert(UsePromotedEVEXEncoding());
+        assert(UseApxNewInstructions());
         assert(IsApxNfEncodableInstruction(id->idIns()));
         id->idSetEvexNfContext();
     }
@@ -614,7 +626,7 @@ void SetEvexZuIfNeeded(instrDesc* id, insOpts instOptions)
 {
     if ((instOptions & INS_OPTS_EVEX_zu_MASK) != 0)
     {
-        assert(UsePromotedEVEXEncoding());
+        assert(UseApxNewInstructions());
         instruction ins = id->idIns();
 #ifdef TARGET_AMD64
         assert(IsApxZuCompatibleInstruction(ins));
@@ -658,7 +670,7 @@ void SetEvexDFVIfNeeded(instrDesc* id, insOpts instOptions)
 #if defined(TARGET_AMD64)
     if ((instOptions & INS_OPTS_EVEX_dfv_MASK) != 0)
     {
-        assert(UsePromotedEVEXEncoding());
+        assert(UseApxNewInstructions());
         assert(IsCCMP(id->idIns()));
         id->idSetEvexDFV(instOptions);
     }

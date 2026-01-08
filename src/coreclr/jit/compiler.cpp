@@ -2002,7 +2002,15 @@ void Compiler::compSetProcessor()
         if (canUseApxEncoding())
         {
             codeGen->GetEmitter()->SetUseRex2Encoding(true);
-            codeGen->GetEmitter()->SetUsePromotedEVEXEncoding(true);
+            if (canUseApxEvexEncoding())
+            {
+                codeGen->GetEmitter()->SetUsePromotedEVEXEncoding(true);
+
+                if (canUseApxNewInstructions())
+                {
+                    codeGen->GetEmitter()->SetUseApxNewInstructions(true);
+                }
+            }
         }
     }
 #endif // TARGET_XARCH
@@ -6021,7 +6029,12 @@ int Compiler::compCompileAfterInit(CORINFO_MODULE_HANDLE classPtr,
 
         if (JitConfig.EnableAPX() != 0)
         {
-            instructionSetFlags.AddInstructionSet(InstructionSet_APX);
+            instructionSetFlags.AddInstructionSet(InstructionSet_APX_F);
+        }
+
+        if (JitConfig.EnableAPX() != 0)
+        {
+            instructionSetFlags.AddInstructionSet(InstructionSet_APX_NCI_NDD_NF);
         }
 
         if (JitConfig.EnableAES() != 0)

@@ -1647,7 +1647,7 @@ void CodeGen::inst_SETCC(GenCondition condition, var_types type, regNumber dstRe
     insOpts                 instOptions = INS_OPTS_NONE;
 
     bool needsMovzx = !varTypeIsByte(type);
-    if (needsMovzx && compiler->canUseApxEvexEncoding() && JitConfig.EnableApxZU())
+    if (needsMovzx && compiler->canUseApxNewInstructions() && JitConfig.EnableApxZU())
     {
         instOptions = INS_OPTS_EVEX_zu;
         needsMovzx  = false;
@@ -8781,7 +8781,7 @@ insOpts CodeGen::OptsFromCFlags(insCflags flags)
 void CodeGen::genCodeForCCMP(GenTreeCCMP* ccmp)
 {
     emitter* emit = GetEmitter();
-    assert(emit->UsePromotedEVEXEncoding());
+    assert(emit->UseApxNewInstructions());
 
     genConsumeOperands(ccmp);
     GenTree*  op1     = ccmp->gtGetOp1();

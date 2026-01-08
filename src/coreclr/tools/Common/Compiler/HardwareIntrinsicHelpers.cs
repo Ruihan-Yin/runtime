@@ -69,7 +69,7 @@ namespace ILCompiler
             public const int Avx512v3 = (1 << 4);
             public const int Avx10v1 = (1 << 5);
             public const int Avx10v2 = (1 << 6);
-            public const int Apx = (1 << 7);
+            public const int Apx_F = (1 << 7);
             public const int Aes = (1 << 8);
             public const int Avx512Vp2intersect = (1 << 9);
             public const int AvxIfma = (1 << 10);
@@ -80,6 +80,8 @@ namespace ILCompiler
             public const int Vaes = (1 << 15);
             public const int WaitPkg = (1 << 16);
             public const int X86Serialize = (1 << 17);
+            public const int Apx_NCI_NDD_NF = (1 << 18);
+
 
             public static void AddToBuilder(InstructionSetSupportBuilder builder, int flags)
             {
@@ -102,8 +104,10 @@ namespace ILCompiler
                 }
                 if ((flags & AvxVnniInt) != 0)
                     builder.AddSupportedInstructionSet("avxvnniint");
-                if ((flags & Apx) != 0)
-                    builder.AddSupportedInstructionSet("apx");
+                if ((flags & Apx_F) != 0)
+                    builder.AddSupportedInstructionSet("apx_f");
+                if ((flags & Apx_NCI_NDD_NF) != 0)
+                    builder.AddSupportedInstructionSet("apx_nci_ndd_nf");
 
                 if ((flags & Aes) != 0)
                 {
@@ -166,7 +170,8 @@ namespace ILCompiler
                     InstructionSet.X64_AVX10v2 => Avx10v2,
                     InstructionSet.X64_AVX10v2_X64 => Avx10v2,
 
-                    InstructionSet.X64_APX => Apx,
+                    InstructionSet.X64_APX_F => Apx_F,
+                    InstructionSet.X64_APX_NCI_NDD_NF => Apx_NCI_NDD_NF,
 
                     InstructionSet.X64_AES => Aes,
                     InstructionSet.X64_AES_X64 => Aes,

@@ -408,7 +408,7 @@ int minipal_getcpufeatures(void)
             {
                 if ((cpuidInfo[CPUID_EDX] & (1 << 21)) != 0)                                                    // Apx
                 {
-                    result |= XArchIntrinsicConstants_Apx;
+                    result |= XArchIntrinsicConstants_Apx_F;
                 }
             }
         }
@@ -443,6 +443,19 @@ int minipal_getcpufeatures(void)
                 else
                 {
                     hasAvx10v1Dependencies = false;
+                }
+            }
+        }
+
+        if (maxCpuId >= 29)
+        {
+            if (result & XArchIntrinsicConstants_Apx_F)
+            {
+                __cpuidex(cpuidInfo, 0x00000029, 0x00000000);
+
+                if ((cpuidInfo[CPUID_EBX] & (1 << 0)) != 0)                                                     // APX_NCI_NDD_NF
+                {
+                    result |= XArchIntrinsicConstants_Apx_NCI_NDD_NF;
                 }
             }
         }

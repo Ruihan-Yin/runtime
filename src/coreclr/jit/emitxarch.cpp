@@ -467,7 +467,7 @@ bool emitter::IsRex2EncodableInstruction(instruction ins) const
 //
 bool emitter::IsApxNddEncodableInstruction(instruction ins) const
 {
-    if (!UsePromotedEVEXEncoding())
+    if (!UseApxNewInstructions())
     {
         return false;
     }
@@ -486,7 +486,7 @@ bool emitter::IsApxNddEncodableInstruction(instruction ins) const
 //
 bool emitter::IsApxNfEncodableInstruction(instruction ins) const
 {
-    if (!UsePromotedEVEXEncoding())
+    if (!UseApxNewInstructions())
     {
         return false;
     }
@@ -3078,7 +3078,7 @@ emitter::code_t emitter::emitExtractEvexPrefix(instruction ins, code_t& code) co
         //                          2. A map number from 0 to 7 (For AVX10.2 and above)
         leadingBytes = check;
         assert((leadingBytes == 0x0F) || ((emitComp->compIsaSupportedDebugOnly(InstructionSet_AVX10v2) ||
-                                           (emitComp->compIsaSupportedDebugOnly(InstructionSet_APX))) &&
+                                           (emitComp->compIsaSupportedDebugOnly(InstructionSet_APX_F))) &&
                                           (leadingBytes >= 0x00) && (leadingBytes <= 0x07)));
 
         // Get rid of both sizePrefix and escape byte
@@ -3152,7 +3152,7 @@ emitter::code_t emitter::emitExtractEvexPrefix(instruction ins, code_t& code) co
 
         case 0x04:
         {
-            assert(emitComp->compIsaSupportedDebugOnly(InstructionSet_APX));
+            assert(emitComp->compIsaSupportedDebugOnly(InstructionSet_APX_F));
             evexPrefix |= (0x04 << 16);
             break;
         }
@@ -6348,7 +6348,7 @@ regNumber emitter::emitInsBinary(instruction ins, emitAttr attr, GenTree* dst, G
     // consistent regardless of whether they are src or dst. As such, we will find
     // the type of each operand and only check them against src/dst where relevant.
 
-    const bool useNDD = UsePromotedEVEXEncoding() && (targetReg != REG_NA);
+    const bool useNDD = UseApxNewInstructions() && (targetReg != REG_NA);
 #if !defined(TARGET_AMD64)
     // APX does not support 32-bit system.
     assert(!useNDD);

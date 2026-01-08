@@ -1886,7 +1886,7 @@ void CodeGen::genGenerateMachineCode()
             printf(" + EVEX");
         }
 
-        if (compiler->opts.compSupportsISA.HasInstructionSet(InstructionSet_APX))
+        if (compiler->opts.compSupportsISA.HasInstructionSet(InstructionSet_APX_F))
         {
             printf(" + APX");
         }

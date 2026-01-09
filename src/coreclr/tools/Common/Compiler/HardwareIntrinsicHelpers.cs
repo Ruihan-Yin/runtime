@@ -80,6 +80,7 @@ namespace ILCompiler
             public const int Vaes = (1 << 15);
             public const int WaitPkg = (1 << 16);
             public const int X86Serialize = (1 << 17);
+            public const int Apx_NCI_NDD_NF = (1 << 18);
 
             public static void AddToBuilder(InstructionSetSupportBuilder builder, int flags)
             {
@@ -104,6 +105,8 @@ namespace ILCompiler
                     builder.AddSupportedInstructionSet("avxvnniint");
                 if ((flags & Apx) != 0)
                     builder.AddSupportedInstructionSet("apx");
+                if ((flags & Apx_NCI_NDD_NF) != 0)
+                    builder.AddSupportedInstructionSet("apx_nci_ndd_nf");
 
                 if ((flags & Aes) != 0)
                 {

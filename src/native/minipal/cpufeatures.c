@@ -446,6 +446,16 @@ int minipal_getcpufeatures(void)
                 }
             }
         }
+
+        if (maxCpuId >= 0x29)
+        {
+            __cpuidex(cpuidInfo, 0x00000029, 0x00000000);
+
+            if ((cpuidInfo[CPUID_EBX] & (1 << 0)) != 0)                                                         // CLDEMOTE
+            {
+                result |= XArchIntrinsicConstants_Apx_NCI_NDD_NF;
+            }
+        }
     }
 #endif // HOST_X86 || HOST_AMD64
 

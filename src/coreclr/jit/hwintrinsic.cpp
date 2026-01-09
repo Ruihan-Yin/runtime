@@ -950,6 +950,7 @@ static const HWIntrinsicIsaRange hwintrinsicIsaRangeArray[] = {
     { NI_Illegal, NI_Illegal },                                 //      AVX10v1
     { FIRST_NI_AVX10v2, LAST_NI_AVX10v2 },                      // AVX10v2
     { NI_Illegal, NI_Illegal },                                 //      APX
+    { NI_Illegal, NI_Illegal },                                 //      APX_NCI_NDD_NF
     { FIRST_NI_AES, LAST_NI_AES },                              // AES
     { FIRST_NI_AES_V256, LAST_NI_AES_V256 },                    // AES_V256
     { FIRST_NI_AES_V512, LAST_NI_AES_V512 },                    // AES_V512

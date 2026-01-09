@@ -81,6 +81,7 @@ instructionset     ,X86   ,Avx10v2              ,                   ,51 ,AVX10v2
 instructionset     ,X86   ,Avx10v2_V512         ,                   ,52 ,AVX10v2               ,avx10v2
 
 instructionset     ,X86   ,                     ,Apx                ,48 ,APX                   ,apx
+instructionset     ,X86   ,                     ,Apx_NCI_NDD_NF     ,85 ,APX_NCI_NDD_NF        ,apx_nci_ndd_nf
 
 instructionset     ,X86   ,Aes                  ,                   ,9  ,AES                   ,aes
 instructionset     ,X86   ,Aes_V256             ,                   ,64 ,AES_V256              ,aes_v256

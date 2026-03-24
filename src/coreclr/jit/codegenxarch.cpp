@@ -8722,24 +8722,40 @@ void CodeGen::genCodeForCCMP(GenTreeCCMP* ccmp)
     instruction             ccmpIns  = JumpKindToCcmp(condDesc.jumpKind1);
     insOpts                 opts     = OptsFromCFlags(ccmp->gtFlagsVal);
 
-    if (op2->isContainedIntOrIImmed())
+    if (ccmp->isTest)
     {
-        GenTreeIntConCommon* intConst = op2->AsIntConCommon();
-        if (intConst->IconValue() == 0)
+        ccmpIns = (instruction)(ccmpIns + (FIRST_CTEST_INSTRUCTION - FIRST_CCMP_INSTRUCTION));
+        if (op2->isContainedIntOrIImmed())
         {
-            // ccmp reg, 0 can be optimized to ctest reg, reg, 1-byte less.
-            ccmpIns = (instruction)(ccmpIns + (FIRST_CTEST_INSTRUCTION - FIRST_CCMP_INSTRUCTION));
-            emit->emitIns_R_R(ccmpIns, cmpSize, srcReg1, srcReg1, opts);
+            emit->emitIns_R_I(ccmpIns, cmpSize, srcReg1, (int)op2->AsIntConCommon()->IconValue(), opts);
         }
-        else 
+        else
         {
-            emit->emitIns_R_I(ccmpIns, cmpSize, srcReg1, (int)intConst->IconValue(), opts);
+            regNumber srcReg2 = op2->GetRegNum();
+            emit->emitIns_R_R(ccmpIns, cmpSize, srcReg1, srcReg2, opts);
         }
     }
     else
     {
-        regNumber srcReg2 = op2->GetRegNum();
-        emit->emitIns_R_R(ccmpIns, cmpSize, srcReg1, srcReg2, opts);
+        if (op2->isContainedIntOrIImmed())
+        {
+            GenTreeIntConCommon* intConst = op2->AsIntConCommon();
+            if (intConst->IconValue() == 0)
+            {
+                // ccmp reg, 0 can be optimized to ctest reg, reg, 1-byte less.
+                ccmpIns = (instruction)(ccmpIns + (FIRST_CTEST_INSTRUCTION - FIRST_CCMP_INSTRUCTION));
+                emit->emitIns_R_R(ccmpIns, cmpSize, srcReg1, srcReg1, opts);
+            }
+            else 
+            {
+                emit->emitIns_R_I(ccmpIns, cmpSize, srcReg1, (int)intConst->IconValue(), opts);
+            }
+        }
+        else
+        {
+            regNumber srcReg2 = op2->GetRegNum();
+            emit->emitIns_R_R(ccmpIns, cmpSize, srcReg1, srcReg2, opts);
+        }
     }
 }
 #endif // TARGET_AMD64

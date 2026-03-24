@@ -997,9 +997,9 @@ bool OptBoolsDsc::optOptimizeCompareChainCondBlock()
     bool op1IsCondChain = FindCompareChain(cond1, &op1IsTestCond);
     bool op2IsCondChain = FindCompareChain(cond2, &op2IsTestCond);
 
-    // X64-APX will be expecting to chain TEST as well to further take advantage of CTEST.
-#ifdef TARGET_ARM64
+#ifndef TARGET_AMD64
     // Avoid cases where optimizations in lowering will produce better code than optimizing here.
+    // ARM64 lowering converts integer test conditions to cbz/cbnz/tbz/tbnz.
     if (op1IsTestCond || op2IsTestCond)
     {
         return false;
@@ -1663,7 +1663,7 @@ PhaseStatus Compiler::optOptimizeBools()
                 // else if ((compOpportunisticallyDependsOn(InstructionSet_APX) || JitConfig.JitEnableApxIfConv()) &&
                 // optBoolsDsc.optOptimizeCompareChainCondBlock())
                 else if (canUseApxEvexEncoding() && JitConfig.EnableApxConditionalChaining() && !optSwitchDetectAndConvert(b1, true, &ccmpVec) &&
-                         optBoolsDsc.optOptimizeCompareChainCondBlock())
+                     optBoolsDsc.optOptimizeCompareChainCondBlock())
                 {
                     // The optimization will have merged b1 and b2. Retry the loop so that
                     // b1 and b2->bbNext can be tested.

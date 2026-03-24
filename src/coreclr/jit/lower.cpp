@@ -12046,6 +12046,11 @@ bool Lowering::TryLowerAndNegativeOne(GenTreeOp* node, GenTree** nextNode)
 //
 bool Lowering::CanConvertOpToCCMP(GenTree* operand, GenTree* tree)
 {
+#if defined(TARGET_AMD64)
+    // on X64-APX, TEST_EQ/NE can be converted to CTEST.
+    if (operand->OperIs(GT_TEST_EQ, GT_TEST_NE) && varTypeIsIntegralOrI(operand->gtGetOp1()))
+        return IsInvariantInRange(operand, tree);
+#endif
     return operand->OperIsCmpCompare() && varTypeIsIntegralOrI(operand->gtGetOp1()) &&
            IsInvariantInRange(operand, tree);
 }
@@ -12121,6 +12126,8 @@ bool Lowering::TryLowerAndOrToCCMP(GenTreeOp* tree, GenTree** next)
     BlockRange().Remove(op2);
     BlockRange().InsertBefore(tree, op2);
 
+    bool op2IsTest = op2->OperIs(GT_TEST_EQ, GT_TEST_NE);
+
     GenCondition cond2 = GenCondition::FromRelop(op2);
     op2->SetOper(GT_CCMP);
     op2->gtType = TYP_VOID;
@@ -12130,6 +12137,7 @@ bool Lowering::TryLowerAndOrToCCMP(GenTreeOp* tree, GenTree** next)
     op2->gtGetOp2()->ClearContained();
 
     GenTreeCCMP* ccmp = op2->AsCCMP();
+    ccmp->isTest = op2IsTest;
 
     if (tree->OperIs(GT_AND))
     {

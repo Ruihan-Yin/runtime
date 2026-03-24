@@ -9486,10 +9486,12 @@ enum insCC : unsigned
 struct GenTreeCCMP final : public GenTreeOpCC
 {
     insCflags gtFlagsVal;
+    bool      isTest;
 
-    GenTreeCCMP(var_types type, GenCondition condition, GenTree* op1, GenTree* op2, insCflags flagsVal)
+    GenTreeCCMP(var_types type, GenCondition condition, GenTree* op1, GenTree* op2, insCflags flagsVal, bool isTest = false)
         : GenTreeOpCC(GT_CCMP, type, condition, op1, op2)
         , gtFlagsVal(flagsVal)
+        , isTest(isTest)
     {
     }
 

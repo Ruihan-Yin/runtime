@@ -1160,24 +1160,6 @@ INST3(ccmpge,           "ccmpge",           IUM_RD, 0x000038,    0x0003880,   0x
 INST3(ccmple,           "ccmple",           IUM_RD, 0x000038,    0x0003880,   0x00003A,                                  ILLEGAL,           ILLEGAL,    INS_TT_NONE,    Writes_OF | Writes_SF | Writes_ZF | Writes_CF | INS_FLAGS_Has_Sbit)
 INST3(ccmpg,            "ccmpg",            IUM_RD, 0x000038,    0x0003880,   0x00003A,                                  ILLEGAL,           ILLEGAL,    INS_TT_NONE,    Writes_OF | Writes_SF | Writes_ZF | Writes_CF | INS_FLAGS_Has_Sbit)
 #define LAST_CCMP_INSTRUCTION INS_ccmpg
-#define FIRST_CFCMOV_INSTRUCTION INS_cfcmovo
-INST3(cfcmovo,          "cfcmovo",          IUM_WR, 0x000040,    BAD_CODE,    0x000040,                                  ILLEGAL,           ILLEGAL,    INS_TT_NONE,    Reads_OF | INS_Flags_Has_NDD | INS_Flags_Has_NF)
-INST3(cfcmovno,         "cfcmovno",         IUM_WR, 0x000041,    BAD_CODE,    0x000041,                                  ILLEGAL,           ILLEGAL,    INS_TT_NONE,    Reads_OF | INS_Flags_Has_NDD | INS_Flags_Has_NF)
-INST3(cfcmovb,          "cfcmovb",          IUM_WR, 0x000042,    BAD_CODE,    0x000042,                                  ILLEGAL,           ILLEGAL,    INS_TT_NONE,    Reads_CF | INS_Flags_Has_NDD | INS_Flags_Has_NF)
-INST3(cfcmovae,         "cfcmovae",         IUM_WR, 0x000043,    BAD_CODE,    0x000043,                                  ILLEGAL,           ILLEGAL,    INS_TT_NONE,    Reads_CF | INS_Flags_Has_NDD | INS_Flags_Has_NF)
-INST3(cfcmove,          "cfcmove",          IUM_WR, 0x000044,    BAD_CODE,    0x000044,                                  ILLEGAL,           ILLEGAL,    INS_TT_NONE,    Reads_ZF | INS_Flags_Has_NDD | INS_Flags_Has_NF)
-INST3(cfcmovne,         "cfcmovne",         IUM_WR, 0x000045,    BAD_CODE,    0x000045,                                  ILLEGAL,           ILLEGAL,    INS_TT_NONE,    Reads_ZF | INS_Flags_Has_NDD | INS_Flags_Has_NF)
-INST3(cfcmovbe,         "cfcmovbe",         IUM_WR, 0x000046,    BAD_CODE,    0x000046,                                  ILLEGAL,           ILLEGAL,    INS_TT_NONE,    Reads_ZF | Reads_CF | INS_Flags_Has_NDD | INS_Flags_Has_NF)
-INST3(cfcmova,          "cfcmova",          IUM_WR, 0x000047,    BAD_CODE,    0x000047,                                  ILLEGAL,           ILLEGAL,    INS_TT_NONE,    Reads_ZF | Reads_CF | INS_Flags_Has_NDD | INS_Flags_Has_NF)
-INST3(cfcmovs,          "cfcmovs",          IUM_WR, 0x000048,    BAD_CODE,    0x000048,                                  ILLEGAL,           ILLEGAL,    INS_TT_NONE,    Reads_SF | INS_Flags_Has_NDD | INS_Flags_Has_NF)
-INST3(cfcmovns,         "cfcmovns",         IUM_WR, 0x000049,    BAD_CODE,    0x000049,                                  ILLEGAL,           ILLEGAL,    INS_TT_NONE,    Reads_SF | INS_Flags_Has_NDD | INS_Flags_Has_NF)
-INST3(cfcmovp,          "cfcmovp",          IUM_WR, 0x00004A,    BAD_CODE,    0x00004A,                                  ILLEGAL,           ILLEGAL,    INS_TT_NONE,    Reads_PF | INS_Flags_Has_NDD | INS_Flags_Has_NF)
-INST3(cfcmovnp,         "cfcmovnp",         IUM_WR, 0x00004B,    BAD_CODE,    0x00004B,                                  ILLEGAL,           ILLEGAL,    INS_TT_NONE,    Reads_PF | INS_Flags_Has_NDD | INS_Flags_Has_NF)
-INST3(cfcmovl,          "cfcmovl",          IUM_WR, 0x00004C,    BAD_CODE,    0x00004C,                                  ILLEGAL,           ILLEGAL,    INS_TT_NONE,    Reads_OF | Reads_SF | INS_Flags_Has_NDD | INS_Flags_Has_NF)
-INST3(cfcmovge,         "cfcmovge",         IUM_WR, 0x00004D,    BAD_CODE,    0x00004D,                                  ILLEGAL,           ILLEGAL,    INS_TT_NONE,    Reads_OF | Reads_SF | INS_Flags_Has_NDD | INS_Flags_Has_NF)
-INST3(cfcmovle,         "cfcmovle",         IUM_WR, 0x00004E,    BAD_CODE,    0x00004E,                                  ILLEGAL,           ILLEGAL,    INS_TT_NONE,    Reads_OF | Reads_SF | Reads_ZF | INS_Flags_Has_NDD | INS_Flags_Has_NF)
-INST3(cfcmovg,          "cfcmovg",          IUM_WR, 0x00004F,    BAD_CODE,    0x00004F,                                  ILLEGAL,           ILLEGAL,    INS_TT_NONE,    Reads_OF | Reads_SF | Reads_ZF | INS_Flags_Has_NDD | INS_Flags_Has_NF)
-#define LAST_CFCMOV_INSTRUCTION INS_cfcmovg
 #define FIRST_CTEST_INSTRUCTION INS_ctesto
 INST3(ctesto,            "ctesto",            IUM_RD, 0x000084,    0x00008F6,   BAD_CODE,                                  ILLEGAL,           ILLEGAL,    INS_TT_NONE,    Writes_OF | Writes_SF | Writes_ZF | Writes_CF | INS_FLAGS_Has_Sbit)
 INST3(ctestno,           "ctestno",           IUM_RD, 0x000084,    0x00000F6,   BAD_CODE,                                  ILLEGAL,           ILLEGAL,    INS_TT_NONE,    Writes_OF | Writes_SF | Writes_ZF | Writes_CF | INS_FLAGS_Has_Sbit)
@@ -1196,6 +1178,24 @@ INST3(ctestge,           "ctestge",           IUM_RD, 0x000084,    0x00000F6,   
 INST3(ctestle,           "ctestle",           IUM_RD, 0x000084,    0x00000F6,   BAD_CODE,                                  ILLEGAL,           ILLEGAL,    INS_TT_NONE,    Writes_OF | Writes_SF | Writes_ZF | Writes_CF | INS_FLAGS_Has_Sbit)
 INST3(ctestg,            "ctestg",            IUM_RD, 0x000084,    0x00000F6,   BAD_CODE,                                  ILLEGAL,           ILLEGAL,    INS_TT_NONE,    Writes_OF | Writes_SF | Writes_ZF | Writes_CF | INS_FLAGS_Has_Sbit)
 #define LAST_CTEST_INSTRUCTION INS_ctestg
+#define FIRST_CFCMOV_INSTRUCTION INS_cfcmovo
+INST3(cfcmovo,          "cfcmovo",          IUM_WR, 0x000040,    BAD_CODE,    0x000040,                                  ILLEGAL,           ILLEGAL,    INS_TT_NONE,    Reads_OF | INS_Flags_Has_NDD | INS_Flags_Has_NF)
+INST3(cfcmovno,         "cfcmovno",         IUM_WR, 0x000041,    BAD_CODE,    0x000041,                                  ILLEGAL,           ILLEGAL,    INS_TT_NONE,    Reads_OF | INS_Flags_Has_NDD | INS_Flags_Has_NF)
+INST3(cfcmovb,          "cfcmovb",          IUM_WR, 0x000042,    BAD_CODE,    0x000042,                                  ILLEGAL,           ILLEGAL,    INS_TT_NONE,    Reads_CF | INS_Flags_Has_NDD | INS_Flags_Has_NF)
+INST3(cfcmovae,         "cfcmovae",         IUM_WR, 0x000043,    BAD_CODE,    0x000043,                                  ILLEGAL,           ILLEGAL,    INS_TT_NONE,    Reads_CF | INS_Flags_Has_NDD | INS_Flags_Has_NF)
+INST3(cfcmove,          "cfcmove",          IUM_WR, 0x000044,    BAD_CODE,    0x000044,                                  ILLEGAL,           ILLEGAL,    INS_TT_NONE,    Reads_ZF | INS_Flags_Has_NDD | INS_Flags_Has_NF)
+INST3(cfcmovne,         "cfcmovne",         IUM_WR, 0x000045,    BAD_CODE,    0x000045,                                  ILLEGAL,           ILLEGAL,    INS_TT_NONE,    Reads_ZF | INS_Flags_Has_NDD | INS_Flags_Has_NF)
+INST3(cfcmovbe,         "cfcmovbe",         IUM_WR, 0x000046,    BAD_CODE,    0x000046,                                  ILLEGAL,           ILLEGAL,    INS_TT_NONE,    Reads_ZF | Reads_CF | INS_Flags_Has_NDD | INS_Flags_Has_NF)
+INST3(cfcmova,          "cfcmova",          IUM_WR, 0x000047,    BAD_CODE,    0x000047,                                  ILLEGAL,           ILLEGAL,    INS_TT_NONE,    Reads_ZF | Reads_CF | INS_Flags_Has_NDD | INS_Flags_Has_NF)
+INST3(cfcmovs,          "cfcmovs",          IUM_WR, 0x000048,    BAD_CODE,    0x000048,                                  ILLEGAL,           ILLEGAL,    INS_TT_NONE,    Reads_SF | INS_Flags_Has_NDD | INS_Flags_Has_NF)
+INST3(cfcmovns,         "cfcmovns",         IUM_WR, 0x000049,    BAD_CODE,    0x000049,                                  ILLEGAL,           ILLEGAL,    INS_TT_NONE,    Reads_SF | INS_Flags_Has_NDD | INS_Flags_Has_NF)
+INST3(cfcmovp,          "cfcmovp",          IUM_WR, 0x00004A,    BAD_CODE,    0x00004A,                                  ILLEGAL,           ILLEGAL,    INS_TT_NONE,    Reads_PF | INS_Flags_Has_NDD | INS_Flags_Has_NF)
+INST3(cfcmovnp,         "cfcmovnp",         IUM_WR, 0x00004B,    BAD_CODE,    0x00004B,                                  ILLEGAL,           ILLEGAL,    INS_TT_NONE,    Reads_PF | INS_Flags_Has_NDD | INS_Flags_Has_NF)
+INST3(cfcmovl,          "cfcmovl",          IUM_WR, 0x00004C,    BAD_CODE,    0x00004C,                                  ILLEGAL,           ILLEGAL,    INS_TT_NONE,    Reads_OF | Reads_SF | INS_Flags_Has_NDD | INS_Flags_Has_NF)
+INST3(cfcmovge,         "cfcmovge",         IUM_WR, 0x00004D,    BAD_CODE,    0x00004D,                                  ILLEGAL,           ILLEGAL,    INS_TT_NONE,    Reads_OF | Reads_SF | INS_Flags_Has_NDD | INS_Flags_Has_NF)
+INST3(cfcmovle,         "cfcmovle",         IUM_WR, 0x00004E,    BAD_CODE,    0x00004E,                                  ILLEGAL,           ILLEGAL,    INS_TT_NONE,    Reads_OF | Reads_SF | Reads_ZF | INS_Flags_Has_NDD | INS_Flags_Has_NF)
+INST3(cfcmovg,          "cfcmovg",          IUM_WR, 0x00004F,    BAD_CODE,    0x00004F,                                  ILLEGAL,           ILLEGAL,    INS_TT_NONE,    Reads_OF | Reads_SF | Reads_ZF | INS_Flags_Has_NDD | INS_Flags_Has_NF)
+#define LAST_CFCMOV_INSTRUCTION INS_cfcmovg
 INST3(crc32_apx,        "crc32",            IUM_RW, BAD_CODE,     BAD_CODE,     0x0000F0,                                3C,                1C,         INS_TT_NONE,    INS_FLAGS_None)
 INST3(movbe_apx,        "movbe",            IUM_WR, 0x000061,     BAD_CODE,     0x000060,                                ILLEGAL,           ILLEGAL,    INS_TT_NONE,    INS_FLAGS_None)
 

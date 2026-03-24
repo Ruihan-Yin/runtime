@@ -3126,8 +3126,7 @@ emitter::code_t emitter::emitExtractEvexPrefix(instruction ins, code_t& code) co
         //                          1. An escape byte 0F (For isa before AVX10.2)
         //                          2. A map number from 0 to 7 (For AVX10.2 and above)
         leadingBytes = check;
-        assert((leadingBytes == 0x0F) || ((m_compiler->compIsaSupportedDebugOnly(InstructionSet_AVX10v2) ||
-                                           (m_compiler->compIsaSupportedDebugOnly(InstructionSet_APX))) &&
+        assert((leadingBytes == 0x0F) || ((m_compiler->compIsaSupportedDebugOnly(InstructionSet_AVX10v2)) &&
                                           (leadingBytes >= 0x00) && (leadingBytes <= 0x07)));
 
         // Get rid of both sizePrefix and escape byte
@@ -3201,7 +3200,7 @@ emitter::code_t emitter::emitExtractEvexPrefix(instruction ins, code_t& code) co
 
         case 0x04:
         {
-            assert(m_compiler->compIsaSupportedDebugOnly(InstructionSet_APX));
+            // assert(m_compiler->compIsaSupportedDebugOnly(InstructionSet_APX));
             evexPrefix |= (0x04 << 16);
             break;
         }

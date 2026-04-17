@@ -8706,7 +8706,16 @@ void CodeGen::genCodeForCCMP(GenTreeCCMP* ccmp)
     if (op2->isContainedIntOrIImmed())
     {
         GenTreeIntConCommon* intConst = op2->AsIntConCommon();
-        emit->emitIns_R_I(ccmpIns, cmpSize, srcReg1, (int)intConst->IconValue(), opts);
+        if (intConst->IconValue() == 0)
+        {
+            // ctest reg, reg is 1-byte shorter encoding than ccmp reg, 0.
+            instruction ctestIns = (instruction)(ccmpIns + FIRST_CTEST_INSTRUCTION - FIRST_CCMP_INSTRUCTION);
+            emit->emitIns_R_R(ctestIns, cmpSize, srcReg1, srcReg1, opts);
+        }
+        else
+        {
+            emit->emitIns_R_I(ccmpIns, cmpSize, srcReg1, (int)intConst->IconValue(), opts);
+        }
     }
     else
     {

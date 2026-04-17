@@ -2091,7 +2091,8 @@ bool emitter::TakesApxExtendedEvexPrefix(const instrDesc* id) const
 #if defined(DEBUG)
     if (m_compiler->DoJitStressPromotedEvexEncoding())
     {
-        return true;
+        // EVEX prefixed CMOV has different semantic from non-EVEX CMOV, so we should not promote CMOV in stress mode.
+        return !insIsCMOV(ins);
     }
 #endif // DEBUG
     if (IsApxOnlyInstruction(ins))

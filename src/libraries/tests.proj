@@ -663,6 +663,14 @@
     <ProjectExclusions Include="$(MSBuildThisFileDirectory)System.Text.RegularExpressions/tests/FunctionalTests/System.Text.RegularExpressions.Tests.csproj" />
   </ItemGroup>
 
+  <!-- Opt-in exclusion of network/HTTP related test projects that need loopback/remote
+       connectivity and time out in restricted network environments. Enable with
+       /p:ExcludeNetworkTests=true. -->
+  <ItemGroup Condition="'$(ExcludeNetworkTests)' == 'true'">
+    <ProjectExclusions Include="$(MSBuildThisFileDirectory)System.Net.*\tests\**\*.Tests.csproj" />
+    <ProjectExclusions Include="$(MSBuildThisFileDirectory)Microsoft.Extensions.Http\tests\**\*.Tests.csproj" />
+  </ItemGroup>
+
   <ItemGroup>
     <ProjectReference Condition="'$(RunSmokeTestsOnly)' == 'true'"
                       Include="@(SmokeTestProject)" />

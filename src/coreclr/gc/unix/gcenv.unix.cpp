@@ -538,6 +538,97 @@ void GCToOSInterface::YieldThread(uint32_t switchCount)
     assert(ret == 0);
 }
 
+// ---------------------------------------------------------------------------
+// THP region interposer (DOTNET_GCTHP)
+//
+// For GC memory ranges registered as THP-eligible, the OS layer transparently
+// widens each commit's mprotect to the enclosing 2MB window (so a full huge page
+// becomes accessible and can be promoted at fault time), widens the matching
+// decommit so the widened tail is released (RSS-safe), keeps the DODUMP/DONTDUMP
+// boundaries 2MB-aligned (so they don't split a huge page and block promotion),
+// and suppresses MADV_FREE (which would reclaim base pages out of a huge page).
+//
+// This is invisible to gc.cpp: it keeps requesting page-granular commits and
+// tracks heap_segment_committed itself; only the underlying syscalls are widened.
+// ---------------------------------------------------------------------------
+#if defined(MADV_HUGEPAGE) && !defined(TARGET_WASM)
+#define GCTHP_INTERPOSE 1
+#endif
+
+#ifdef GCTHP_INTERPOSE
+static const size_t THP_SIZE = (size_t)2 * 1024 * 1024;
+#define MAX_THP_RANGES 4
+struct thp_range_t { uint8_t* start; uint8_t* end; bool widen_decommit; };
+static thp_range_t s_thp_ranges[MAX_THP_RANGES];
+static volatile int s_thp_range_count = 0;    // entries filled before count is published
+
+// When the GC reports memory pressure (high memory load or near the heap hard limit), the
+// interposer backs off the two behaviours that inflate real RSS: it stops widening commits to
+// 2MB (so no extra huge-page windows are faulted in early) and stops suppressing MADV_FREE (so
+// the kernel can reclaim freed pages again). Decommit-widening stays on - it only releases
+// memory, so it is always RSS-safe. Set once per GC from a single-threaded context; read
+// racily on the hot path, which is fine because it is purely advisory.
+static volatile bool s_thp_under_pressure = false;
+
+static inline uint8_t* thp_align_up(uint8_t* p)
+{
+    return (uint8_t*)(((size_t)p + THP_SIZE - 1) & ~(THP_SIZE - 1));
+}
+
+// Returns the THP range wholly containing [addr, addr+size), or nullptr.
+static const thp_range_t* thp_range_of(void* addr, size_t size)
+{
+    uint8_t* a = (uint8_t*)addr;
+    uint8_t* e = a + size;
+    int n = s_thp_range_count;
+    for (int i = 0; i < n; i++)
+    {
+        if ((a >= s_thp_ranges[i].start) && (e <= s_thp_ranges[i].end) && (e >= a))
+            return &s_thp_ranges[i];
+    }
+    return nullptr;
+}
+#endif // GCTHP_INTERPOSE
+
+// Register a GC memory range as THP-eligible. Called once per coarse reservation
+// (region range, bookkeeping) at GC init, before concurrent activity. widen_decommit
+// must only be true for a range whose sub-decommits never cross a 2MB boundary into
+// still-committed neighbouring data (true for the region range: region bases/ends are
+// 2MB-aligned; false for the packed bookkeeping reservation).
+void GCToOSInterface::RegisterThpRange(void* address, size_t size, bool widen_decommit)
+{
+#ifdef GCTHP_INTERPOSE
+    int n = s_thp_range_count;
+    if (n < MAX_THP_RANGES)
+    {
+        s_thp_ranges[n].start = (uint8_t*)address;
+        s_thp_ranges[n].end = (uint8_t*)address + size;
+        s_thp_ranges[n].widen_decommit = widen_decommit;
+        s_thp_range_count = n + 1;    // publish after fields are set
+    }
+    // Set VM_HUGEPAGE over the whole range once so any fully-committed 2MB window
+    // (or a khugepaged-collapsible one) can be backed by a huge page.
+    madvise(address, size, MADV_HUGEPAGE);
+#else
+    UNREFERENCED_PARAMETER(address);
+    UNREFERENCED_PARAMETER(size);
+    UNREFERENCED_PARAMETER(widen_decommit);
+#endif
+}
+
+// Inform the OS layer whether the GC is under memory pressure (high memory load or near the
+// heap hard limit). When set, the THP interposer stops widening commits and stops suppressing
+// MADV_FREE so it does not inflate real RSS while the system is tight. Called once per GC from
+// a single-threaded context.
+void GCToOSInterface::SetThpMemoryPressure(bool underPressure)
+{
+#ifdef GCTHP_INTERPOSE
+    s_thp_under_pressure = underPressure;
+#else
+    UNREFERENCED_PARAMETER(underPressure);
+#endif
+}
+
 // Reserve virtual memory range.
 // Parameters:
 //  size       - size of the virtual memory range
@@ -627,8 +718,28 @@ bool GCToOSInterface::VirtualRelease(void* address, size_t size)
 //  true if it has succeeded, false if it has failed
 static bool VirtualCommitInner(void* address, size_t size, uint16_t node, bool newMemory)
 {
+    // By default operate on exactly the requested range.
+    void*  op_address = address;
+    size_t op_size    = size;
+
+#ifdef GCTHP_INTERPOSE
+    // If this commit lands in a THP range, widen the operated range up to the enclosing
+    // 2MB boundary so the whole huge-page window becomes accessible (fault-time promotion)
+    // and the DODUMP boundary stays 2MB-aligned. Region ends are 2MB-aligned so the widened
+    // range never leaves the containing reservation. Transparent to gc.cpp (it still tracks
+    // only the requested [address, size)). Skipped under memory pressure so we don't fault in
+    // extra huge-page windows when the system is already tight.
+    const thp_range_t* r = s_thp_under_pressure ? nullptr : thp_range_of(address, size);
+    if (r != nullptr)
+    {
+        uint8_t* wide_end = thp_align_up((uint8_t*)address + size);
+        if (wide_end > r->end) wide_end = r->end;
+        op_size = (size_t)(wide_end - (uint8_t*)address);
+    }
+#endif // GCTHP_INTERPOSE
+
 #ifndef TARGET_WASM
-    bool success = mprotect(address, size, PROT_WRITE | PROT_READ) == 0;
+    bool success = mprotect(op_address, op_size, PROT_WRITE | PROT_READ) == 0;
 #else
     bool success = true;
 #endif // !TARGET_WASM
@@ -636,8 +747,9 @@ static bool VirtualCommitInner(void* address, size_t size, uint16_t node, bool n
 #if defined(MADV_DONTDUMP) && !defined(TARGET_WASM)
     if (success && !newMemory)
     {
-        // Include committed memory in coredump. New memory is included by default.
-        madvise(address, size, MADV_DODUMP);
+        // Include committed memory in coredump. Applied over the (possibly widened) range so
+        // the DODUMP/DONTDUMP VMA boundary is 2MB-aligned and does not split a huge page.
+        madvise(op_address, op_size, MADV_DODUMP);
     }
 #endif
 
@@ -654,7 +766,7 @@ static bool VirtualCommitInner(void* address, size_t size, uint16_t node, bool n
             int index = node / sizeof(unsigned long);
             nodeMask[index] = ((unsigned long)1) << (node & (sizeof(unsigned long) - 1));
 
-            int st = BindMemoryPolicy(address, size, nodeMask, usedNodeMaskBits);
+            int st = BindMemoryPolicy(op_address, op_size, nodeMask, usedNodeMaskBits);
             assert(st == 0);
             // If the mbind fails, we still return the allocated memory since the node is just a hint
         }
@@ -719,6 +831,32 @@ bool GCToOSInterface::VirtualCommitThp(void* address, size_t size, uint16_t node
     return result;
 }
 
+// Advise that a virtual memory range should be backed by Transparent Huge Pages,
+// without committing it. Best effort and advisory.
+// Parameters:
+//  address - starting virtual address
+//  size    - size of the virtual memory range
+// Return:
+//  true if the hint was issued (or is a no-op), false on hard failure
+bool GCToOSInterface::VirtualHugePageHint(void* address, size_t size)
+{
+#ifdef MADV_HUGEPAGE
+    int rc = madvise(address, size, MADV_HUGEPAGE);
+#ifdef _DEBUG
+    if (rc != 0)
+    {
+        dprintf(1, "THP: VirtualHugePageHint madvise failed for %p, size=%zu, errno=%d\n", address, size, errno);
+    }
+#endif // _DEBUG
+    (void)rc;
+#else
+    UNREFERENCED_PARAMETER(address);
+    UNREFERENCED_PARAMETER(size);
+#endif // MADV_HUGEPAGE
+    // The hint is purely advisory; always report success so callers treat it as best effort.
+    return true;
+}
+
 // Commit virtual memory range.
 // Parameters:
 //  size      - size of the virtual memory range
@@ -756,17 +894,35 @@ bool GCToOSInterface::VirtualDecommit(void* address, size_t size)
     // that much more clear to the operating system that we no
     // longer need these pages. Also, GC depends on re-committed pages to
     // be zeroed-out.
+    void*  op_address = address;
+    size_t op_size    = size;
+
+#ifdef GCTHP_INTERPOSE
+    // For a THP range that allows it (the region range: region ends are 2MB-aligned, so this
+    // never crosses into a neighbouring region's committed data), widen the decommit END up
+    // to the 2MB boundary. This releases the tail that VirtualCommitInner widened (keeps RSS
+    // bounded) and only ever extends ABOVE the GC's new committed point, so the
+    // "[used, committed) is zero on recommit" contract holds (fresh mmap re-zeroes).
+    const thp_range_t* r = thp_range_of(address, size);
+    if ((r != nullptr) && r->widen_decommit)
+    {
+        uint8_t* wide_end = thp_align_up((uint8_t*)address + size);
+        if (wide_end > r->end) wide_end = r->end;
+        op_size = (size_t)(wide_end - (uint8_t*)address);
+    }
+#endif // GCTHP_INTERPOSE
+
     int mmapFlags = MAP_FIXED | MAP_ANON | MAP_PRIVATE;
 #ifdef TARGET_HAIKU
     mmapFlags |= MAP_NORESERVE;
 #endif
-    bool bRetVal = mmap(address, size, PROT_NONE, mmapFlags, -1, 0) != MAP_FAILED;
+    bool bRetVal = mmap(op_address, op_size, PROT_NONE, mmapFlags, -1, 0) != MAP_FAILED;
 
 #ifdef MADV_DONTDUMP
     if (bRetVal)
     {
         // Do not include freed memory in coredump.
-        madvise(address, size, MADV_DONTDUMP);
+        madvise(op_address, op_size, MADV_DONTDUMP);
     }
 #endif
 
@@ -784,6 +940,18 @@ bool GCToOSInterface::VirtualDecommit(void* address, size_t size)
 bool GCToOSInterface::VirtualReset(void * address, size_t size, bool unlock)
 {
     int st = EINVAL;
+
+#ifdef GCTHP_INTERPOSE
+    // On THP ranges, skip the reset entirely: MADV_FREE would let the kernel reclaim
+    // individual base pages out of a huge page (fragmenting it), and the reset is only an
+    // optimization (avoid swapping discardable pages), not required for correctness. Under
+    // memory pressure we re-enable the reset so the kernel can reclaim freed pages.
+    if (!s_thp_under_pressure && (thp_range_of(address, size) != nullptr))
+    {
+        UNREFERENCED_PARAMETER(unlock);
+        return true;
+    }
+#endif // GCTHP_INTERPOSE
 
 #if defined(MADV_DONTDUMP) || defined(HAVE_MADV_FREE)
 

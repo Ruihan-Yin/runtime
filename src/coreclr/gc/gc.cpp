@@ -2037,6 +2037,10 @@ const int max_snoop_level = 128;
 #define MH_TH_CARD_BUNDLE  (180*1024*1024)
 #endif //CARD_BUNDLE
 
+// Size of a Transparent Huge Page (THP) on x64/arm64 Linux. Used to align and size
+// commits so the kernel can back GC memory with 2MB huge pages when DOTNET_GCTHP is on.
+#define GC_HUGE_PAGE_SIZE  ((size_t)2 * 1024 * 1024)
+
 // min size to decommit to make the OS call worthwhile
 #define MIN_DECOMMIT_SIZE  (100*OS_PAGE_SIZE)
 
@@ -2068,6 +2072,32 @@ inline
 uint8_t* align_lower_page (uint8_t* add)
 {
     return (uint8_t*)align_lower_page ((size_t)add);
+}
+
+// Round up/down to a Transparent Huge Page (2MB) boundary. Used by the THP path to
+// make commit ranges 2MB-aligned and 2MB-sized so the kernel can form huge pages.
+inline
+size_t align_on_huge_page (size_t add)
+{
+    return ((add + GC_HUGE_PAGE_SIZE - 1) & ~(GC_HUGE_PAGE_SIZE - 1));
+}
+
+inline
+uint8_t* align_on_huge_page (uint8_t* add)
+{
+    return (uint8_t*)align_on_huge_page ((size_t)add);
+}
+
+inline
+size_t align_lower_huge_page (size_t add)
+{
+    return (add & ~(GC_HUGE_PAGE_SIZE - 1));
+}
+
+inline
+uint8_t* align_lower_huge_page (uint8_t* add)
+{
+    return (uint8_t*)align_lower_huge_page ((size_t)add);
 }
 
 inline
@@ -9558,7 +9588,14 @@ uint32_t* gc_heap::make_card_table (uint8_t* start, uint8_t* end)
     get_card_table_element_layout(start, end, card_table_element_layout);
 
     size_t alloc_size = card_table_element_layout[total_bookkeeping_elements];
-    uint8_t* mem = (uint8_t*)GCToOSInterface::VirtualReserve (alloc_size, 0, virtual_reserve_flags);
+    size_t reserve_alignment = 0;
+#ifdef TARGET_UNIX
+    // 2MB-align the bookkeeping reservation so its interior 2MB windows are well-defined
+    // for Transparent Huge Pages.
+    if (use_thp_p)
+        reserve_alignment = GC_HUGE_PAGE_SIZE;
+#endif // TARGET_UNIX
+    uint8_t* mem = (uint8_t*)GCToOSInterface::VirtualReserve (alloc_size, reserve_alignment, virtual_reserve_flags);
     bookkeeping_start = mem;
 
     if (!mem)
@@ -9569,6 +9606,20 @@ uint32_t* gc_heap::make_card_table (uint8_t* start, uint8_t* end)
 
     dprintf (2, ("Init - Card table alloc for %zd bytes: [%zx, %zx[",
                  alloc_size, (size_t)mem, (size_t)(mem+alloc_size)));
+
+#ifdef TARGET_UNIX
+    // Register the whole bookkeeping VMA with the OS-layer THP interposer. These tables (card
+    // table, brick table, mark array, seg mapping) are large, contiguous and long-lived; once
+    // registered, commits within a 2MB-aligned window are widened so they can be backed by huge
+    // pages and MADV_FREE is suppressed. Decommits are NOT widened (widen_decommit = false): the
+    // tables are packed with page-aligned element boundaries, so widening a decommit could cross
+    // into a neighbouring element still in use. Registration also issues the one-shot whole-range
+    // MADV_HUGEPAGE hint; it does not commit memory (elements are still committed on demand below).
+    if (use_thp_p && (alloc_size >= GC_HUGE_PAGE_SIZE))
+    {
+        GCToOSInterface::RegisterThpRange (mem, align_lower_huge_page (alloc_size), /* widen_decommit */ false);
+    }
+#endif // TARGET_UNIX
 
 #ifdef USE_REGIONS
     if (!inplace_commit_card_table (g_gc_lowest_address, global_region_allocator.get_left_used_unsafe()))
@@ -12455,6 +12506,17 @@ heap_segment* gc_heap::make_heap_segment (uint8_t* new_pages, size_t size, gc_he
         return 0;
     }
 
+#if defined(TARGET_UNIX) && defined(USE_REGIONS)
+    // Hint the whole region's VMA for Transparent Huge Pages once at creation. The region
+    // base is 2MB-aligned (thp_region_eligible_p) and the size is a 2MB multiple, so any
+    // 2MB window that later gets fully committed can be backed by a huge page. This is
+    // advisory and does not commit memory - commit stays on-demand in grow_heap_segment.
+    if (thp_region_eligible_p())
+    {
+        GCToOSInterface::VirtualHugePageHint (new_pages, size);
+    }
+#endif // TARGET_UNIX && USE_REGIONS
+
 #ifdef USE_REGIONS
     dprintf (REGIONS_LOG, ("Making region %p->%p(%zdmb)",
         new_pages, (new_pages + size), (size / 1024 / 1024)));
@@ -13566,6 +13628,25 @@ void gc_heap::distribute_free_regions()
     
     bool aggressive_decommit_large_p = joined_last_gc_before_oom || dt_high_memory_load_p() || near_heap_hard_limit_p();
 
+#ifdef TARGET_UNIX
+    // Tell the OS-layer THP interposer whether we are under memory pressure. Under pressure it
+    // stops widening commits to 2MB and stops suppressing MADV_FREE, so it does not inflate real
+    // RSS. We back off on three signals:
+    //  - the usual aggressive-decommit signal (high memory load / near the hard limit / pre-OOM);
+    //  - any heap hard limit, or any restricted physical-memory limit (container / explicit total).
+    // Under any memory restriction the GC sizes the gen0 budget from a memory-load figure derived
+    // from ACTUAL process RSS, which the eager 2MB widening inflates; that feeds trim_youngest_desired
+    // and collapses the gen0 budget into a GC storm well below the high-memory-load threshold. In
+    // those scenarios staying within the memory bound matters more than TLB coverage, so widening is
+    // disabled and the range falls back to the one-shot MADV_HUGEPAGE hint (opportunistic promotion).
+    // distribute_free_regions runs once per GC in a single-threaded (joined) phase.
+    if (use_thp_p)
+    {
+        bool thp_backoff = aggressive_decommit_large_p || (heap_hard_limit != 0) || is_restricted_physical_mem;
+        GCToOSInterface::SetThpMemoryPressure (thp_backoff);
+    }
+#endif // TARGET_UNIX
+
     int region_factor[count_distributed_free_region_kinds] = { 1, LARGE_REGION_FACTOR };
 
 #ifndef MULTIPLE_HEAPS
@@ -14616,6 +14697,24 @@ HRESULT gc_heap::initialize_gc (size_t soh_segment_size,
                                            ((size_t)1 << min_segment_size_shr),
                                            &g_gc_lowest_address, &g_gc_highest_address))
             return E_OUTOFMEMORY;
+
+#ifdef TARGET_UNIX
+        // Register the whole region range with the OS-layer THP interposer so commits within it
+        // are widened to full 2MB windows (fault-time huge-page promotion) and decommits are
+        // widened to release the widened tail (RSS-safe). Region bases and ends are 2MB-aligned
+        // (region size >= 2MB, checked by thp_region_eligible_p, and region_allocator aligns
+        // bases to the region size), so widening a decommit never crosses a region boundary into
+        // a neighbour's committed data - widen_decommit is safe here.
+        if (thp_region_eligible_p())
+        {
+            GCToOSInterface::RegisterThpRange (g_gc_lowest_address,
+                (size_t)(g_gc_highest_address - g_gc_lowest_address), /* widen_decommit */ true);
+
+            // Seed the interposer's backoff state for the startup ramp (before the first GC pushes
+            // it): if any memory restriction is configured, do not widen commits during ramp-up.
+            GCToOSInterface::SetThpMemoryPressure ((heap_hard_limit != 0) || is_restricted_physical_mem);
+        }
+#endif // TARGET_UNIX
 
         if (!allocate_initial_regions(number_of_heaps))
             return E_OUTOFMEMORY;
@@ -53842,6 +53941,16 @@ bool gc_heap::ReadTHPEnabled()
     fclose(file);
     return is_enabled;
 }
+
+#ifdef USE_REGIONS
+bool gc_heap::thp_region_eligible_p()
+{
+    // THP must be enabled and the region must be at least one huge page. Region bases are
+    // aligned to the region size (region_allocator::init), so a >= 2MB region size also
+    // guarantees 2MB-aligned region bases.
+    return use_thp_p && (((size_t)1 << min_segment_size_shr) >= GC_HUGE_PAGE_SIZE);
+}
+#endif // USE_REGIONS
 #endif // TARGET_UNIX
 
 

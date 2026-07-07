@@ -3478,6 +3478,13 @@ private:
     PER_HEAP_ISOLATED_METHOD bool ReadTHPEnabled();
 #endif // TARGET_UNIX
 
+#if defined(TARGET_UNIX) && defined(USE_REGIONS)
+    // True when Transparent Huge Pages are enabled and the region size is large enough
+    // (>= 2MB) to hold a huge page. Region bases are aligned to the region size, so this
+    // also guarantees region bases are 2MB-aligned.
+    PER_HEAP_ISOLATED_METHOD bool thp_region_eligible_p();
+#endif // TARGET_UNIX && USE_REGIONS
+
     PER_HEAP_ISOLATED_METHOD bool compute_hard_limit();
 
     PER_HEAP_ISOLATED_METHOD bool compute_memory_settings(bool is_initialization, uint32_t& nhp, uint32_t nhp_from_config, size_t& seg_size_from_config,

@@ -290,6 +290,41 @@ public:
     //  true if it has succeeded, false if it has failed
     static bool VirtualCommitThp(void *address, size_t size, uint16_t node = NUMA_NODE_UNDEFINED);
 
+    // Advise that a virtual memory range should be backed by Transparent Huge Pages,
+    // without committing it. Unlike VirtualCommitThp this only issues the huge-page
+    // hint (madvise(MADV_HUGEPAGE) on Unix) and does not change protection/commit state,
+    // so it can be applied over a whole reserved range once. This is advisory and best
+    // effort - failure is ignored and it is a no-op on platforms without THP support.
+    // Parameters:
+    //  address - starting virtual address
+    //  size    - size of the virtual memory range
+    // Return:
+    //  true if the hint was issued (or is a no-op), false on hard failure
+    static bool VirtualHugePageHint(void *address, size_t size);
+
+    // Register a GC memory range as Transparent Huge Page eligible with the OS layer.
+    // Once registered, the OS layer transparently widens commits within the range to the
+    // enclosing 2MB window (so a full huge page can be promoted at fault time), keeps the
+    // core-dump madvise boundaries 2MB-aligned, and suppresses MADV_FREE (which would
+    // reclaim base pages out of a huge page). This is invisible to the GC's own commit
+    // accounting. Called once per coarse reservation at GC init. No-op on Windows and on
+    // platforms without THP support.
+    // Parameters:
+    //  address        - starting virtual address of the range (must be 2MB-aligned)
+    //  size           - size of the virtual memory range
+    //  widen_decommit - when true, decommits within the range are also widened up to the
+    //                   enclosing 2MB boundary (RSS-safe only when sub-decommits never cross
+    //                   a 2MB boundary into still-committed neighbouring data)
+    static void RegisterThpRange(void *address, size_t size, bool widen_decommit);
+
+    // Inform the OS layer whether the GC is currently under memory pressure (high memory load
+    // or near the heap hard limit). When set, the THP interposer backs off the behaviours that
+    // inflate real RSS (commit widening and MADV_FREE suppression) so it does not worsen the
+    // pressure. No-op on Windows and on platforms without THP support.
+    // Parameters:
+    //  underPressure - true when the GC observes high memory load / near the hard limit
+    static void SetThpMemoryPressure(bool underPressure);
+
     // Reserve and Commit virtual memory range for Large Pages
     // Parameters:
     //  size    - size of the virtual memory range

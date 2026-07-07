@@ -776,6 +776,31 @@ bool GCToOSInterface::VirtualCommitThp(void* address, size_t size, uint16_t node
     return false;
 }
 
+// Advise that a virtual memory range should be backed by Transparent Huge Pages.
+// THP is a UNIX only feature; on Windows this is a no-op.
+bool GCToOSInterface::VirtualHugePageHint(void* address, size_t size)
+{
+    UNREFERENCED_PARAMETER(address);
+    UNREFERENCED_PARAMETER(size);
+    return true;
+}
+
+// Register a GC memory range as Transparent Huge Page eligible.
+// THP is a UNIX only feature; on Windows this is a no-op.
+void GCToOSInterface::RegisterThpRange(void* address, size_t size, bool widen_decommit)
+{
+    UNREFERENCED_PARAMETER(address);
+    UNREFERENCED_PARAMETER(size);
+    UNREFERENCED_PARAMETER(widen_decommit);
+}
+
+// Inform the OS layer of GC memory pressure for THP tuning.
+// THP is a UNIX only feature; on Windows this is a no-op.
+void GCToOSInterface::SetThpMemoryPressure(bool underPressure)
+{
+    UNREFERENCED_PARAMETER(underPressure);
+}
+
 // Decomit virtual memory range.
 // Parameters:
 //  address - starting virtual address
